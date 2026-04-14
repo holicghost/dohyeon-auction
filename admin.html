@@ -207,7 +207,10 @@
   <!-- 탭1: 팀장 -->
   <div class="tab-content active" id="tab-leaders">
     <div class="card">
-      <div class="card-title">팀장 정보 수정 <span class="badge">저장 즉시 반영</span></div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>팀장 정보 수정 <span class="badge">저장 즉시 반영</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="openImportModal('leaders')" style="font-size:.72rem;">📥 다른 방에서 불러오기</button>
+      </div>
       <div class="leader-cards" id="leader-cards"></div>
       <div style="margin-top:14px;display:flex;gap:8px;align-items:flex-end;">
         <div style="flex:1;"><label>새 팀장 닉네임</label>
@@ -220,7 +223,10 @@
   <!-- 탭2: 선수 -->
   <div class="tab-content" id="tab-players">
     <div class="card">
-      <div class="card-title">선수 정보 수정 <span class="badge" id="player-count-badge"></span></div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>선수 정보 수정 <span class="badge" id="player-count-badge"></span></span>
+        <button class="btn btn-ghost btn-sm" onclick="openImportModal('players')" style="font-size:.72rem;">📥 다른 방에서 불러오기</button>
+      </div>
       <div id="player-list"></div>
     </div>
     <div class="card">
@@ -316,6 +322,41 @@
   </div>
   </div><!-- /tab-area -->
 </div><!-- /admin-screen -->
+
+<!-- 불러오기 모달 -->
+<div id="import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    width:100%;max-width:540px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div id="import-modal-title" style="font-size:1rem;font-weight:800;color:var(--text);">📥 불러오기</div>
+      <button onclick="closeImportModal()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <!-- 바디 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden;min-height:0;">
+      <!-- 왼쪽: 방 목록 -->
+      <div style="border-right:1px solid var(--border);padding:14px;overflow-y:auto;">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:10px;font-weight:700;letter-spacing:.5px;">방 선택</div>
+        <div id="import-room-list"></div>
+      </div>
+      <!-- 오른쪽: 미리보기 -->
+      <div style="padding:14px;overflow-y:auto;display:flex;flex-direction:column;">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:10px;font-weight:700;letter-spacing:.5px;">미리보기</div>
+        <div id="import-preview" style="display:none;flex:1;"></div>
+        <div id="import-preview-empty" style="color:var(--muted);font-size:.8rem;text-align:center;padding:30px 0;">
+          왼쪽에서 방을 선택하세요
+        </div>
+      </div>
+    </div>
+    <!-- 푸터 -->
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;">
+      <button onclick="closeImportModal()" class="btn btn-ghost btn-sm">취소</button>
+      <button id="import-confirm-btn" onclick="confirmImport()" class="btn btn-primary btn-sm"
+        style="display:none;">✅ 이 방에서 가져오기</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 <footer style="margin-top:32px;padding-bottom:24px;text-align:center;">
@@ -651,7 +692,7 @@
       const photoEl = t.photo
         ? `<img src="${t.photo}" />`
         : `<span style="font-size:1.3rem;">👤</span>`;
-      return `<div class="leader-card">
+      return `<div class="leader-card" id="lcard-${tk}">
         <div class="lc-header">
           <div class="lc-photo" id="lc-photo-${tk}" onclick="triggerLeaderPhoto('${tk}')" title="클릭해서 사진 변경">
             ${photoEl}
@@ -671,7 +712,10 @@
           <input type="number" id="l-pts-${tk}" placeholder="새 포인트" min="0" />
           <button class="btn btn-warn btn-sm" onclick="saveLeaderPts('${tk}')">포인트 설정</button>
         </div>
-        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;" onclick="saveLeaderName('${tk}')">💾 이름 저장</button>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="btn btn-primary btn-sm" style="flex:1;" onclick="saveLeaderAll('${tk}')">💾 저장</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.15);border:1px solid var(--danger);color:var(--danger);" onclick="deleteLeader('${tk}','${escHtml(t.name||tk)}')">🗑</button>
+        </div>
       </div>`;
     }).join('');
   }
@@ -700,6 +744,44 @@
     showToast(`✅ ${name} 저장됨`);
   }
 
+  async function saveLeaderAll(tk) {
+    const name = document.getElementById(`l-name-${tk}`).value.trim();
+    if (!name) { showToast('이름을 입력해주세요'); return; }
+    const { ref, update } = window._dbFns;
+    const upd = { name };
+    // 포인트 입력값 있으면 같이 저장
+    const ptsInput = document.getElementById(`l-pts-${tk}`).value;
+    if (ptsInput !== '') {
+      const pts = parseInt(ptsInput);
+      if (!isNaN(pts) && pts >= 0) upd.points = pts;
+    }
+    await update(ref(window._db, `rooms/${ROOM}/teams/${tk}`), upd);
+    document.getElementById(`l-pts-${tk}`).value = '';
+    showToast(`✅ ${name} 저장 완료`);
+  }
+
+  async function deleteLeader(tk, name) {
+    if (!confirm(`팀장 「${name}」을 삭제하시겠습니까?\n해당 팀에 낙찰된 선수 배정도 함께 제거됩니다.`)) return;
+    const { ref, update, remove, get } = window._dbFns;
+    // 해당 팀에 배정된 선수들 assignedTo 초기화
+    const playersSnap = await get(ref(window._db, `rooms/${ROOM}/players`));
+    const upd = {};
+    if (playersSnap.exists()) {
+      Object.entries(playersSnap.val()).forEach(([pid, p]) => {
+        if (p.assignedTo === tk) upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = null;
+      });
+    }
+    // 경매 order에서 팀 관련 log 제거
+    const aSnap = await get(ref(window._db, `rooms/${ROOM}/auction/log`));
+    if (aSnap.exists()) {
+      const log = (aSnap.val() || []).filter(e => e.teamKey !== tk);
+      upd[`rooms/${ROOM}/auction/log`] = log;
+    }
+    if (Object.keys(upd).length) await update(ref(window._db), upd);
+    await remove(ref(window._db, `rooms/${ROOM}/teams/${tk}`));
+    showToast(`✅ 팀장 ${name} 삭제 완료`);
+  }
+
   async function saveLeaderPts(tk) {
     const val = parseInt(document.getElementById(`l-pts-${tk}`).value);
     if (isNaN(val) || val < 0) { showToast('올바른 포인트를 입력해주세요'); return; }
@@ -717,7 +799,7 @@
     const teams = snap.val() || {};
     const idx = Object.keys(teams).length;
     const newKey = `team_${idx}`;
-    const initPts = roomData.meta.points || 1000;
+    const initPts = roomData?.meta?.points || 1000;
     const upd = {};
     upd[`rooms/${ROOM}/teams/${newKey}`] = {
       name, points: initPts, members: [], photo: '',
@@ -817,7 +899,10 @@
       <!-- 소개 -->
       <div class="fg" style="margin-bottom:14px;"><label>한 줄 소개</label>
         <input id="pintro-${pid}" value="${escHtml(p.intro||'')}" placeholder="예: 고점 뜨면 못 말려요" /></div>
-      <button class="btn btn-primary" style="width:100%;" onclick="savePlayer('${pid}')">💾 저장</button>`;
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="savePlayer('${pid}')">💾 저장</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);border:1px solid var(--danger);color:var(--danger);padding:8px 14px;" onclick="deletePlayer('${pid}','${escHtml(p.name||pid)}')">🗑 삭제</button>
+      </div>`;
   }
 
   function togglePCard(pid) {
@@ -1012,7 +1097,7 @@
     const {ref,update,get}=window._dbFns;
     const snap=await get(ref(window._db,`rooms/${ROOM}`));
     const data=snap.val();
-    const initPts=data.meta.points||1000;
+    const initPts=data?.meta?.points||1000;
     const upd={};
     Object.entries(data.teams||{}).forEach(([tk])=>{
       upd[`rooms/${ROOM}/teams/${tk}/points`]=initPts;
@@ -1046,6 +1131,169 @@
   }
 
   // ── 유틸
+
+  async function deletePlayer(pid, name) {
+    if (!confirm(`선수 「${name}」을 삭제하시겠습니까?`)) return;
+    const { ref, update, remove, get } = window._dbFns;
+    const upd = {};
+    const orderSnap = await get(ref(window._db, `rooms/${ROOM}/auction/order`));
+    if (orderSnap.exists()) {
+      upd[`rooms/${ROOM}/auction/order`] = (orderSnap.val() || []).filter(id => id !== pid);
+    }
+    const teamsSnap = await get(ref(window._db, `rooms/${ROOM}/teams`));
+    if (teamsSnap.exists()) {
+      Object.entries(teamsSnap.val()).forEach(([tk, t]) => {
+        const members = (t.members || []).filter(m => m !== pid);
+        if (members.length !== (t.members || []).length)
+          upd[`rooms/${ROOM}/teams/${tk}/members`] = members;
+      });
+    }
+    const logSnap = await get(ref(window._db, `rooms/${ROOM}/auction/log`));
+    if (logSnap.exists())
+      upd[`rooms/${ROOM}/auction/log`] = (logSnap.val() || []).filter(e => e.pid !== pid);
+    if (Object.keys(upd).length) await update(ref(window._db), upd);
+    await remove(ref(window._db, `rooms/${ROOM}/players/${pid}`));
+    showToast(`✅ 선수 ${name} 삭제 완료`);
+  }
+
+  // ── 불러오기 모달 ────────────────────────────────────────────────
+  let _importType = '';
+
+  async function openImportModal(type) {
+    _importType = type;
+    const modal = document.getElementById('import-modal');
+    document.getElementById('import-modal-title').textContent = type === 'leaders' ? '📥 팀장 불러오기' : '📥 선수 불러오기';
+    modal.style.display = 'flex';
+    const listEl = document.getElementById('import-room-list');
+    listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:16px;">불러오는 중...</div>';
+    document.getElementById('import-preview').style.display = 'none';
+    document.getElementById('import-confirm-btn').style.display = 'none';
+    try {
+      const { ref, get } = window._dbFns;
+      const snap = await get(ref(window._db, 'rooms'));
+      if (!snap.exists()) { listEl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;">방이 없습니다</div>'; return; }
+      const entries = Object.entries(snap.val())
+        .filter(([code]) => code !== ROOM)
+        .sort((a,b) => (b[1].meta?.createdAt||0) - (a[1].meta?.createdAt||0));
+      if (!entries.length) { listEl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;">다른 방이 없습니다</div>'; return; }
+      listEl.innerHTML = entries.map(([code, room]) => {
+        const title = room.meta?.title || code;
+        const cnt = type === 'leaders'
+          ? Object.keys(room.teams||{}).length + '팀'
+          : Object.keys(room.players||{}).length + '명';
+        return `<div onclick="previewImport('${code}')"
+          style="display:flex;align-items:center;justify-content:space-between;
+          background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+          padding:10px 14px;margin-bottom:6px;cursor:pointer;"
+          id="iroom-${code}">
+          <div>
+            <span style="font-family:'Black Han Sans',sans-serif;font-size:1rem;color:var(--accent);letter-spacing:2px;">${code}</span>
+            <span style="color:var(--muted);font-size:.78rem;margin-left:8px;">${escHtml(title)}</span>
+          </div>
+          <span style="font-size:.75rem;color:var(--accent2);">${cnt}</span>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div style="color:var(--danger);text-align:center;padding:16px;">오류: ${e.message}</div>`;
+    }
+  }
+
+  async function previewImport(fromCode) {
+    // 선택된 방 하이라이트
+    document.querySelectorAll('[id^="iroom-"]').forEach(el => el.style.borderColor = 'var(--border)');
+    const selEl = document.getElementById(`iroom-${fromCode}`);
+    if (selEl) selEl.style.borderColor = 'var(--accent)';
+    const { ref, get } = window._dbFns;
+    const previewEl  = document.getElementById('import-preview');
+    const confirmBtn = document.getElementById('import-confirm-btn');
+    previewEl.style.display = '';
+    previewEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:12px;">미리보기 로딩...</div>';
+    confirmBtn.style.display = 'none';
+    const emptyEl = document.getElementById('import-preview-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
+    try {
+      const snap = await get(ref(window._db, `rooms/${fromCode}`));
+      if (!snap.exists()) { previewEl.innerHTML = '<div style="color:var(--danger);text-align:center;padding:12px;">방을 찾을 수 없습니다</div>'; return; }
+      const data = snap.val();
+      confirmBtn.dataset.fromCode = fromCode;
+      confirmBtn.style.display = '';
+      if (_importType === 'leaders') {
+        const teams = Object.entries(data.teams || {});
+        previewEl.innerHTML = `<div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;font-weight:700;">팀장 ${teams.length}명</div>` +
+          teams.map(([,t]) => `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;margin-bottom:4px;">
+            <div style="width:30px;height:30px;border-radius:5px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              ${t.photo ? `<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;">` : '👤'}
+            </div>
+            <span style="font-weight:700;font-size:.9rem;">${escHtml(t.name||'이름없음')}</span>
+            <span style="font-size:.72rem;color:var(--muted);margin-left:auto;">${t.points ?? '-'}pt</span>
+          </div>`).join('');
+      } else {
+        const players = Object.entries(data.players || {});
+        previewEl.innerHTML = `<div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;font-weight:700;">선수 ${players.length}명</div>
+          <div style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">` +
+          players.map(([,p]) => {
+            const g = p.grade === '고' ? '🔴' : '🔵';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;">
+              <span>${g}</span>
+              <span style="font-weight:700;font-size:.88rem;">${escHtml(p.name||'이름없음')}</span>
+              <span style="font-size:.72rem;color:var(--muted);">${p.role||''} · ${p.curTier||''}</span>
+            </div>`;
+          }).join('') + '</div>';
+      }
+    } catch(e) {
+      previewEl.innerHTML = `<div style="color:var(--danger);text-align:center;padding:12px;">오류: ${e.message}</div>`;
+    }
+  }
+
+  async function confirmImport() {
+    const fromCode = document.getElementById('import-confirm-btn').dataset.fromCode;
+    if (!fromCode) return;
+    const label = _importType === 'leaders' ? '팀장' : '선수';
+    if (!confirm(`[${fromCode}] 방의 ${label} 데이터를 현재 방(${ROOM})에 덮어씁니다.\n기존 ${label} 목록이 교체됩니다. 계속할까요?`)) return;
+    const { ref, get, update } = window._dbFns;
+    try {
+      const snap = await get(ref(window._db, `rooms/${fromCode}`));
+      if (!snap.exists()) { showToast('원본 방을 찾을 수 없습니다'); return; }
+      const srcData = snap.val();
+      const upd = {};
+      if (_importType === 'leaders') {
+        const newTeams = {};
+        Object.entries(srcData.teams || {}).forEach(([tk, t]) => {
+          newTeams[tk] = { ...t, members: [],
+            points: roomData.meta?.points || t.points || 1000,
+            leaderToken: Math.random().toString(36).substring(2,10) };
+        });
+        upd[`rooms/${ROOM}/teams`] = newTeams;
+      } else {
+        const newPlayers = {};
+        Object.entries(srcData.players || {}).forEach(([pid, p]) => {
+          newPlayers[pid] = { ...p, assignedTo: null };
+        });
+        upd[`rooms/${ROOM}/players`] = newPlayers;
+        const RO = {'딜러':0,'탱커':1,'힐러':2,'유동':3};
+        const GO = {'고':0,'저':1};
+        const sorted = Object.keys(newPlayers).sort((a,b) => {
+          const pa = newPlayers[a], pb = newPlayers[b];
+          const rA = RO[pa?.role]??99, rB = RO[pb?.role]??99;
+          if (rA !== rB) return rA - rB;
+          return (GO[pa?.grade]??1) - (GO[pb?.grade]??1);
+        });
+        upd[`rooms/${ROOM}/auction/order`]         = sorted;
+        upd[`rooms/${ROOM}/auction/log`]            = [];
+        upd[`rooms/${ROOM}/auction/status`]         = 'waiting';
+        upd[`rooms/${ROOM}/auction/currentPlayer`]  = null;
+        upd[`rooms/${ROOM}/auction/currentBid`]     = 0;
+        upd[`rooms/${ROOM}/auction/currentLeader`]  = null;
+      }
+      await update(ref(window._db), upd);
+      closeImportModal();
+      showToast(`✅ [${fromCode}] 방에서 ${label} 불러오기 완료!`);
+    } catch(e) { showToast('오류: ' + e.message); }
+  }
+
+  function closeImportModal() {
+    document.getElementById('import-modal').style.display = 'none';
+  }
   function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function showToast(msg){
     const t=document.getElementById('toast');

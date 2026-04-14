@@ -656,9 +656,12 @@
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   async function placeBid(amount) {
+    if (!roomData || !roomData.auction || !roomData.teams) return;
+    if (!IS_LEADER) return;
     const { ref, update } = window._dbFns;
     const { auction, teams, meta } = roomData;
     if (auction.status !== 'bidding') { showToast('아직 입찰할 수 없습니다'); return; }
+    if (!auction.currentPlayer) { showToast('경매 중인 선수가 없습니다'); return; }
     let amt = amount ?? parseInt(document.getElementById('custom-amt').value);
     if (isNaN(amt)) { showToast('금액을 입력해주세요'); return; }
     const curBid = auction.currentBid || 0;

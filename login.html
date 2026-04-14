@@ -252,7 +252,7 @@
       if (!snap.exists()) { showMsg('일치하는 회원 정보가 없습니다', 'err'); return; }
       const users = snap.val();
       const found = Object.entries(users).find(([uid, u]) =>
-        u.name === name && u.phone.replace(/-/g,'') === phone.replace(/-/g,'')
+        u.name === name && (u.phone||'').replace(/-/g,'') === phone.replace(/-/g,'')
       );
       if (!found) { showMsg('일치하는 회원 정보가 없습니다', 'err'); return; }
       document.getElementById('find-id-result').style.display = '';
@@ -273,7 +273,7 @@
       const snap = await get(ref(window._db, `users/${id}`));
       if (!snap.exists()) { showMsg('아이디가 존재하지 않습니다', 'err'); return; }
       const u = snap.val();
-      if (u.name !== name || u.phone.replace(/-/g,'') !== phone.replace(/-/g,'')) {
+      if (u.name !== name || (u.phone||'').replace(/-/g,'') !== phone.replace(/-/g,'')) {
         showMsg('이름 또는 휴대폰 번호가 일치하지 않습니다', 'err'); return;
       }
       _verifiedUid = id;
@@ -294,7 +294,11 @@
       const { ref, set, get } = window._dbFns;
       const snap = await get(ref(window._db, `users/${_verifiedUid}`));
       const userData = snap.val();
-      await set(ref(window._db, `users/${_verifiedUid}`), { ...userData, pw });
+      // 반드시 해시 저장, 평문 pw 필드 완전 제거
+      const pwHash = await sha256(pw);
+      const safeData = { ...userData, pwHash };
+      delete safeData.pw;
+      await set(ref(window._db, `users/${_verifiedUid}`), safeData);
       showMsg('🎉 비밀번호가 변경되었습니다! 로그인해주세요', 'ok');
       _verifiedUid = null;
       setTimeout(() => {

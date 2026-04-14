@@ -1,0 +1,67 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        // 본인만 자신의 데이터를 읽을 수 있음
+        // 관리자는 전체 읽기 가능 (admin role 필요)
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+
+        // 본인만 자신의 데이터를 쓸 수 있음
+        ".write": "auth != null && auth.uid === $uid",
+
+        // role 필드는 절대 클라이언트에서 직접 수정 불가
+        // (관리자 승격은 서버에서만 가능해야 하지만,
+        //  현재 구조상 최소한 본인이 자신을 admin으로 올리는 것만 막음)
+        "role": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+
+        // withdrawn 필드도 관리자만 수정 가능
+        "withdrawn": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        }
+      }
+    },
+
+    "rooms": {
+      "$roomId": {
+        // 방 읽기: 누구나 가능 (참가자/관전자 접근용)
+        ".read": true,
+
+        // 방 생성/수정: 인증된 사용자만
+        ".write": "auth != null",
+
+        "auction": {
+          // 경매 데이터: 누구나 읽기 가능
+          ".read": true,
+          // 경매 쓰기: 인증된 사용자만
+          ".write": "auth != null"
+        },
+
+        "teams": {
+          ".read": true,
+          ".write": "auth != null"
+        },
+
+        "players": {
+          ".read": true,
+          ".write": "auth != null"
+        },
+
+        "chat": {
+          ".read": true,
+          // 채팅 쓰기: 누구나 가능 (팀 토큰 검증은 클라이언트에서)
+          ".write": true
+        }
+      }
+    },
+
+    "drafts": {
+      "$uid": {
+        // 본인 임시저장만 접근 가능
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}

@@ -1303,7 +1303,27 @@
       photo:    card.querySelector('.p-photo')?.value   || '',
     })).filter(p => p.name.trim());
     if (players.length === 0) { showToast('선수를 최소 1명 이상 입력해주세요'); return; }
-    if (!confirm(`[${code}] 방을 업데이트합니다.\n경매가 진행 중이었다면 데이터가 초기화됩니다. 계속할까요?`)) return;
+    // 경매 진행 중 여부 확인
+    const { ref: _r, get: _g } = window._dbFns;
+    const _statusSnap = await _g(_r(window._db, `rooms/${code}/auction/status`));
+    const _currentStatus = _statusSnap.val();
+    const _isActive = _currentStatus === 'preview' || _currentStatus === 'bidding';
+    if (_isActive) {
+      const proceed = confirm(
+        `⚠️ 경고: [${code}] 방은 현재 경매가 진행 중입니다!
+
+업데이트하면 모든 경매 데이터(낙찰 기록, 팀 배정, 포인트)가 초기화됩니다.
+
+정말 초기화하고 업데이트하시겠습니까?
+(취소하면 admin.html에서 메타 정보만 수정하세요)`
+      );
+      if (!proceed) return;
+    } else if (_currentStatus === 'finished') {
+      if (!confirm(`[${code}] 방은 경매가 완료된 상태입니다.
+업데이트하면 경매 데이터가 초기화됩니다. 계속할까요?`)) return;
+    } else {
+      if (!confirm(`[${code}] 방을 업데이트합니다. 계속할까요?`)) return;
+    }
     const btn = document.getElementById('create-btn');
     btn.textContent = '업데이트 중...'; btn.style.opacity = '.5'; btn.style.pointerEvents = 'none';
     try {
