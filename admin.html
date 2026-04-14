@@ -8,7 +8,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, get, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
       authDomain: "dohyeon-4e4e0.firebaseapp.com",
@@ -20,7 +20,8 @@
     };
     const app = initializeApp(firebaseConfig);
     window._db = getDatabase(app);
-    window._dbFns = { ref, onValue, update, get };
+    window._dbFns = { ref, onValue, update, get, set, remove };
+    window._remove = remove;
     // Firebase 초기화 완료 신호
     window._firebaseReady = true;
     if (window._onFirebaseReady) window._onFirebaseReady();
@@ -546,6 +547,7 @@
       el.innerHTML = Object.entries(users).map(([uid, u]) => {
         const dt = new Date(u.createdAt||0);
         const isAdmin = u.role === 'admin';
+        const isWithdrawn = u.withdrawn === true;
         const myRooms = (userRooms[uid]||[]).sort((a,b)=>b.createdAt-a.createdAt);
         const roomBadges = myRooms.map(r => {
           const st = r.status==='finished'?'완료':r.status==='waiting'?'대기':'진행중';
@@ -554,15 +556,15 @@
             background:rgba(255,255,255,.06);border:1px solid var(--border);color:${clr};">
             ${r.code} · ${r.title} · ${st}</span>`;
         }).join(' ');
-        return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-          padding:12px 14px;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-weight:700;font-size:.95rem;">${u.name}</span>
+        return `<div style="background:var(--surface2);border:1px solid ${isWithdrawn?'rgba(239,68,68,.3)':'var(--border)'};border-radius:10px;
+          padding:12px 14px;margin-bottom:8px;opacity:${isWithdrawn?.6:1};">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-weight:700;font-size:.95rem;">${u.name}${isWithdrawn?` <span style="font-size:.65rem;color:var(--danger);">(탈퇴)</span>`:''}</span>
               <span style="color:var(--muted);font-size:.75rem;">@${uid}</span>
               ${isAdmin ? `<span style="font-size:.68rem;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,.2);color:var(--accent);border:1px solid var(--accent);font-weight:700;">👑 관리자</span>` : ''}
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
               <span style="font-size:.68rem;color:var(--muted);">${dt.toLocaleDateString('ko-KR')} 가입</span>
               <button onclick="toggleAdmin('${uid}', ${isAdmin})"
                 style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;
@@ -571,10 +573,21 @@
                 color:${isAdmin?'var(--danger)':'var(--accent)'};">
                 ${isAdmin ? '관리자 해제' : '관리자 설정'}
               </button>
+              ${isWithdrawn
+                ? `<button onclick="restoreUser('${uid}')" style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;background:rgba(34,197,94,.12);border:1px solid var(--success);color:var(--success);">복구</button>`
+                : `<button onclick="withdrawUser('${uid}','${u.name}')" style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;background:rgba(249,115,22,.12);border:1px solid var(--warn);color:var(--warn);">탈퇴처리</button>`
+              }
+              <button onclick="deleteUserAdmin('${uid}','${u.name}')"
+                style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;
+                background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);">
+                🗑 삭제
+              </button>
             </div>
           </div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:${myRooms.length?'8':'0'}px;">
-            📱 ${u.phone || '-'} &nbsp;·&nbsp; ✉ ${u.email || '-'}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.75rem;color:var(--muted);margin-bottom:${myRooms.length?'8':'0'}px;">
+            <div>📱 <span style="color:var(--text);">${u.phone || '-'}</span></div>
+            <div>✉ <span style="color:var(--text);">${u.email || '-'}</span></div>
+            <div>🏠 생성 방 <span style="color:var(--accent2);font-weight:700;">${myRooms.length}개</span></div>
           </div>
           ${myRooms.length ? `<div style="font-size:.72rem;color:var(--muted);margin-bottom:5px;">생성한 방 (${myRooms.length}개)</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;">${roomBadges}</div>` : ''}
@@ -591,6 +604,30 @@
     if (!confirm(msg)) return;
     await set(ref(window._db, `users/${uid}/role`), isAdmin ? null : 'admin');
     showToast(isAdmin ? '관리자 해제 완료' : '👑 관리자 설정 완료');
+    loadUsers();
+  }
+
+  async function withdrawUser(uid, name) {
+    if (!confirm(`「${name}」(@${uid}) 을 탈퇴 처리하시겠습니까?\n로그인이 차단되고 탈퇴 상태로 표시됩니다.`)) return;
+    const { ref, set } = window._dbFns;
+    await set(ref(window._db, `users/${uid}/withdrawn`), true);
+    showToast(`✅ @${uid} 탈퇴 처리 완료`);
+    loadUsers();
+  }
+
+  async function restoreUser(uid) {
+    if (!confirm(`@${uid} 탈퇴를 취소하고 계정을 복구하시겠습니까?`)) return;
+    const { ref, set } = window._dbFns;
+    await set(ref(window._db, `users/${uid}/withdrawn`), null);
+    showToast(`✅ @${uid} 계정 복구 완료`);
+    loadUsers();
+  }
+
+  async function deleteUserAdmin(uid, name) {
+    if (!confirm(`「${name}」(@${uid}) 을 완전 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+    const { ref, remove } = window._dbFns;
+    await remove(ref(window._db, `users/${uid}`));
+    showToast(`✅ @${uid} 삭제 완료`);
     loadUsers();
   }
 

@@ -358,6 +358,9 @@
       const valid = (user.pwHash && user.pwHash === pwHash) || (!user.pwHash && user.pw === pw);
       if (!valid) { showMsg('비밀번호가 틀렸습니다', 'err'); return; }
 
+      // 탈퇴 처리된 계정 차단
+      if (user.withdrawn === true) { showMsg('탈퇴 처리된 계정입니다. 관리자에게 문의하세요.', 'err'); return; }
+
       // 구버전 평문 비밀번호면 해시로 업데이트
       if (!user.pwHash && user.pw) {
         const { set } = window._dbFns;
