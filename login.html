@@ -288,7 +288,7 @@
     if (!_verifiedUid) { showMsg('본인 확인이 필요합니다', 'err'); return; }
     const pw  = document.getElementById('fp-new').value;
     const pw2 = document.getElementById('fp-new2').value;
-    if (!pw || pw.length < 6) { showMsg('비밀번호는 6자 이상이어야 합니다', 'err'); return; }
+    if (!pw || pw.length < 8) { showMsg('비밀번호는 8자 이상이어야 합니다', 'err'); return; }
     if (pw !== pw2) { showMsg('비밀번호가 일치하지 않습니다', 'err'); return; }
     try {
       const { ref, set, get } = window._dbFns;
@@ -317,9 +317,9 @@
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
-  // ── 비밀번호 규칙 검사 (영문+숫자+특수기호 포함, 6자 이상)
+  // ── 비밀번호 규칙 검사 (영문+숫자+특수기호 포함, 8자 이상)
   function validatePw(pw) {
-    if (pw.length < 6)                       return '비밀번호는 6자 이상이어야 합니다';
+    if (pw.length < 8)                       return '비밀번호는 8자 이상이어야 합니다';
     if (!/[a-zA-Z]/.test(pw))               return '영문자를 포함해야 합니다';
     if (!/[0-9]/.test(pw))                  return '숫자를 포함해야 합니다';
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw)) return '특수기호(!@#$% 등)를 포함해야 합니다';

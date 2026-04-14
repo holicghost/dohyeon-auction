@@ -60,9 +60,9 @@
     .grade-고{background:linear-gradient(90deg,#ef4444,#f97316);}
     .grade-저{background:linear-gradient(90deg,#3b82f6,#6366f1);}
     .pc-top{display:flex;gap:14px;align-items:flex-start;margin-top:6px;}
-    .pc-photo{width:90px;height:90px;border-radius:10px;background:var(--surface2);
+    .pc-photo{width:140px;height:140px;border-radius:12px;background:var(--surface2);
       border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;
-      justify-content:center;font-size:2.2rem;overflow:hidden;}
+      justify-content:center;font-size:3rem;overflow:hidden;}
     .pc-photo img{width:100%;height:100%;object-fit:cover;}
     .pc-info{flex:1;min-width:0;}
     .pc-grade-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
@@ -228,6 +228,7 @@
           <div class="pc-info">
             <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어 매물</div>
             <div class="pc-name" id="pc-name">-</div>
+            <div id="pc-meta" style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;"></div>
             <div class="pc-tiers" id="pc-tiers"></div>
             <div class="hero-icon-wrap" id="pc-heroes"></div>
           </div>
@@ -344,6 +345,15 @@
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
   }
 
+  function renderHeroes(heroes) {
+    return heroes.filter(Boolean).map(h => {
+      const url = heroImgUrl(h);
+      return url
+        ? `<div class="hero-icon"><img src="${url}" onerror="this.parentElement.innerHTML='<span style=font-size:1.1rem>\u{1F3AE}</span>'" /><div class="hero-icon-name">${h}</div></div>`
+        : `<span class="hero-tag">\u2694 ${h}</span>`;
+    }).join('');
+  }
+
   const TEAM_COLORS = [
     {bg:'linear-gradient(135deg,#c2602a,#e8823a)',light:'rgba(200,90,30,.15)'},
     {bg:'linear-gradient(135deg,#7b3fa0,#a85fd4)',light:'rgba(120,60,160,.15)'},
@@ -427,6 +437,14 @@
 
     document.getElementById('pc-name').textContent = p.name;
 
+    // 포지션 + 스타일 인라인으로 이름 아래에
+    const metaHtml = [
+      p.role  ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 9px;font-size:.75rem;margin-right:5px;">${p.role}</span>` : '',
+      p.style ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '',
+    ].join('');
+    const metaEl = document.getElementById('pc-meta');
+    if (metaEl) metaEl.innerHTML = metaHtml;
+
     document.getElementById('pc-tiers').innerHTML = `
       <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
       <div class="tier-item"><div class="tier-label">전 시즌</div><div class="tier-val">${p.prevTier||'-'}</div></div>
@@ -435,11 +453,8 @@
 
     document.getElementById('pc-heroes').innerHTML = renderHeroes([p.hero1,p.hero2,p.hero3]);
 
-    // 상세 테이블
-    const rows = [];
-    if (p.role)  rows.push(['포지션', p.role]);
-    if (p.style) rows.push(['플레이 스타일', p.style]);
-    document.getElementById('pc-table').innerHTML = rows.map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    // 테이블은 비워둠 (위에서 처리)
+    document.getElementById('pc-table').innerHTML = '';
 
     const introEl = document.getElementById('pc-intro');
     if (p.intro) { introEl.textContent = `💬 ${p.intro}`; introEl.style.display=''; }
@@ -453,13 +468,24 @@
     const lockedEl = document.getElementById('bid-locked');
     const bidSec   = document.getElementById('bid-section');
 
-    if (isPreview) {
+    if (auction.paused) {
+      pb.className = 'phase-badge';
+      pb.style.cssText = 'background:rgba(245,158,11,.1);border:1px solid var(--accent);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:700;';
+      pb.innerHTML = '<span>⏸ 일시정지 중</span>';
+      lockedEl.style.display = '';
+      lockedEl.textContent = '⏸ 경매가 일시정지되었습니다';
+      bidSec.style.display = 'none';
+      stopTimer();
+    } else if (isPreview) {
       pb.className = 'phase-badge pb-preview';
+      pb.style.cssText = '';
       pb.innerHTML = '<span>⏳ 입찰 대기 중</span>';
       lockedEl.style.display = '';
+      lockedEl.textContent = '🔒 잠시 후 입찰이 시작됩니다…';
       bidSec.style.display   = 'none';
     } else {
       pb.className = 'phase-badge pb-bidding';
+      pb.style.cssText = '';
       pb.innerHTML = '<span class="dot"></span><span>입찰 중</span>';
       lockedEl.style.display = 'none';
       if (IS_LEADER) {
@@ -480,7 +506,9 @@
         }).join('');
       } else { bidSec.style.display='none'; }
     }
-    startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+    if (!auction.paused) {
+      startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+    }
   }
 
   // 오른쪽 경매 순서 패널
@@ -514,17 +542,17 @@
       const playerCards = g.players.map(({pid, p}) => {
         const isCur   = pid === curPid;
         const isDone  = p.assignedTo != null;
-        const photo   = p.photo
+        const photoInner = p.photo
           ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" />`
-          : '👤';
+          : `<span style="font-size:1.1rem;">👤</span>`;
         const teamName = isDone ? (roomData.teams[p.assignedTo]?.name || '') : '';
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;opacity:${isDone?'.4':'1'};">
-          <div style="width:48px;height:48px;border-radius:7px;overflow:hidden;background:var(--surface2);
+          <div style="width:52px;height:52px;border-radius:7px;overflow:hidden;background:var(--surface2);
             border:2px solid ${isCur ? '#f59e0b' : 'var(--border)'};
-            ${isCur ? 'box-shadow:0 0 8px rgba(245,158,11,.6);' : ''}
-            display:flex;align-items:center;justify-content:center;font-size:1.1rem;
-            ${isDone ? 'filter:grayscale(1);' : ''}">${photo}</div>
-          <div style="font-size:.6rem;color:var(--text);max-width:52px;text-align:center;
+            ${isCur ? 'box-shadow:0 0 10px rgba(245,158,11,.7);' : ''}
+            display:flex;align-items:center;justify-content:center;
+            ${isDone ? 'filter:grayscale(1);' : ''}">${photoInner}</div>
+          <div style="font-size:.6rem;color:var(--text);max-width:56px;text-align:center;
             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
             ${isDone ? 'text-decoration:line-through;' : ''}">${p.name}</div>
           ${isDone ? `<div style="font-size:.55rem;color:var(--success);">▸ ${teamName}</div>` : ''}

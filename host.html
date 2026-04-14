@@ -329,6 +329,7 @@
 
         <div class="btn-row">
           <button class="btn btn-ghost"  onclick="skipPlayer()">⏭ 건너뛰기</button>
+          <button class="btn btn-ghost"  id="pause-btn" onclick="togglePause()" style="background:rgba(245,158,11,.15);border-color:var(--accent);color:var(--accent);">⏸ 일시정지</button>
           <button class="btn btn-danger" onclick="confirmNobid()">❌ 유찰</button>
           <button class="btn btn-primary" id="hammer-btn" onclick="hammered()" disabled>🔨 낙찰!</button>
         </div>
@@ -527,17 +528,36 @@
     // 낙찰 버튼
     document.getElementById('hammer-btn').disabled = isPreview;
 
+    // 일시정지 버튼 상태 반영
+    const pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+      const isPaused = auction.paused || false;
+      pauseBtn.textContent = isPaused ? '▶ 재개' : '⏸ 일시정지';
+      pauseBtn.style.background = isPaused ? 'rgba(34,197,94,.15)' : 'rgba(245,158,11,.15)';
+      pauseBtn.style.borderColor = isPaused ? 'var(--success)' : 'var(--accent)';
+      pauseBtn.style.color       = isPaused ? 'var(--success)' : 'var(--accent)';
+    }
+
     // 페이즈 배지
     const pb = document.getElementById('phase-badge');
-    if (isPreview) {
+    if (auction.paused) {
+      pb.className = 'phase-badge';
+      pb.style.cssText = 'background:rgba(245,158,11,.1);border:1px solid var(--accent);color:var(--accent);';
+      pb.innerHTML = '<span>⏸ 일시정지 중</span>';
+      stopTimer();
+    } else if (isPreview) {
       pb.className = 'phase-badge pb-preview';
+      pb.style.cssText = '';
       pb.innerHTML = '<span>⏳ 입찰 대기 중</span>';
     } else {
       pb.className = 'phase-badge pb-bidding';
+      pb.style.cssText = '';
       pb.innerHTML = '<span class="dot"></span><span>입찰 중</span>';
     }
 
-    startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+    if (!auction.paused) {
+      startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+    }
 
     // NEXT 선수
     renderNext();
@@ -662,6 +682,32 @@
   async function confirmNobid() {
     if (!confirm('유찰 처리하시겠습니까?')) return;
     await nextPlayer({}); showToast('유찰 처리됨');
+  }
+
+  // ── 일시정지 / 재개
+  async function togglePause() {
+    const { ref, update } = window._dbFns;
+    const { auction } = roomData;
+    const isPaused = auction.paused || false;
+    const btn = document.getElementById('pause-btn');
+    if (!isPaused) {
+      // 일시정지: 남은 시간 저장, 타이머 멈춤
+      const remaining = Math.max(0, auction.timerEndsAt - Date.now());
+      await update(ref(window._db, `rooms/${ROOM}/auction`), {
+        paused: true,
+        pausedRemaining: remaining
+      });
+      showToast('⏸ 경매 일시정지');
+    } else {
+      // 재개: 남은 시간 기준으로 timerEndsAt 재계산
+      const remaining = auction.pausedRemaining || 5000;
+      await update(ref(window._db, `rooms/${ROOM}/auction`), {
+        paused: false,
+        pausedRemaining: null,
+        timerEndsAt: Date.now() + remaining
+      });
+      showToast('▶ 경매 재개');
+    }
   }
 
   // ── 건너뛰기

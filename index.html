@@ -203,9 +203,22 @@
     <button class="add-btn" onclick="addPlayer()">+ 선수 수동 추가</button>
     <div id="save-btns" style="display:flex;gap:8px;margin-bottom:12px;margin-top:4px;">
       <button class="btn btn-ghost" onclick="saveFormData()" style="flex:1;font-size:.85rem;">💾 임시저장</button>
-      <button class="btn btn-ghost" id="load-btn" onclick="loadFormData()" style="flex:1;font-size:.85rem;display:none;">📂 불러오기</button>
+      <button class="btn btn-ghost" onclick="openDraftModal()" style="flex:1;font-size:.85rem;">📂 저장 목록</button>
     </div>
     <div id="save-info" style="font-size:.72rem;color:var(--muted);text-align:center;margin-bottom:8px;display:none;"></div>
+
+    <!-- 임시저장 목록 모달 -->
+    <div id="draft-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);overflow-y:auto;">
+      <div style="max-width:520px;margin:48px auto 48px;background:var(--card);border-radius:16px;padding:24px;box-shadow:0 8px 40px rgba(0,0,0,.4);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <span style="font-size:1.05rem;font-weight:700;">📂 임시저장 목록</span>
+          <button onclick="closeDraftModal()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <div id="draft-list-area" style="display:flex;flex-direction:column;gap:10px;min-height:80px;">
+          <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">불러오는 중...</div>
+        </div>
+      </div>
+    </div>
     <button class="btn btn-primary" id="create-btn" onclick="createRoom()">방 만들기 →</button>
   </div>
 </div>
@@ -715,11 +728,22 @@
   }
 
   // ── 폼 전체 저장
-  function saveFormData() {
-    // 비회원은 저장 불가
+  // ── Firebase 다중 임시저장 ──────────────────────────────────────────
+  function _draftsRef() {
+    const uid = window._currentUser?.id;
+    if (!uid || !window._db || !window._dbFns) return null;
+    return window._dbFns.ref(window._db, `drafts/${uid}`);
+  }
+
+  async function saveFormData() {
     if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    if (!window._db || !window._dbFns) { showToast('Firebase 연결 중입니다. 잠시 후 다시 시도해주세요'); return; }
+    const uid = window._currentUser?.id;
+    const savedAt = Date.now();
+    const draftId = `draft_${savedAt}`;
+    const titleVal = document.getElementById('title').value.trim() || '제목 없음';
     const config = {
-      title:   document.getElementById('title').value,
+      title:   titleVal,
       teams:   document.getElementById('teamCount').value,
       members: document.getElementById('membersPerTeam').value,
       points:  document.getElementById('points').value,
@@ -728,7 +752,7 @@
     };
     const leaders = [...document.querySelectorAll('.leader-item')].map((item, i) => ({
       name:  item.querySelector('.l-name')?.value || '',
-      photo: leaderPhotos[i] || '',   // IndexedDB는 용량 무제한이라 사진 포함
+      photo: leaderPhotos[i] || '',
     }));
     const players = [...document.querySelectorAll('.pfc')].map(card => ({
       name:     card.querySelector('.p-name')?.value   || '',
@@ -744,32 +768,87 @@
       intro:    card.querySelector('.p-intro')?.value  || '',
       photo:    card.querySelector('.p-photo')?.value  || '',
     }));
-    idbSave({ config, leaders, players, savedAt: Date.now() })
-      .then(() => { checkSavedData(); showToast('✅ 임시저장 완료!'); })
-      .catch(e => showToast('저장 실패: ' + e.message));
+    try {
+      const { ref, set } = window._dbFns;
+      await set(ref(window._db, `drafts/${uid}/${draftId}`), { config, leaders, players, savedAt, draftTitle: titleVal });
+      showToast('✅ 임시저장 완료!');
+      checkSavedData();
+    } catch(e) { showToast('저장 실패: ' + e.message); }
   }
 
   function checkSavedData() {
-    if (window._currentUser?.guest) return;
-    idbLoad().then(d => {
-      if (!d) return;
-      const btn  = document.getElementById('load-btn');
+    if (window._currentUser?.guest || !window._db || !window._dbFns) return;
+    const uid = window._currentUser?.id;
+    const { ref, get } = window._dbFns;
+    get(ref(window._db, `drafts/${uid}`)).then(snap => {
       const info = document.getElementById('save-info');
-      if (btn) btn.style.display = '';
-      if (info) {
-        info.style.display = '';
-        const dt = new Date(d.savedAt);
-        info.textContent = `💾 저장된 내역 — ${dt.toLocaleDateString('ko-KR')} ${dt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} · 선수 ${d.players?.length||0}명`;
-      }
+      if (!snap.exists() || !info) return;
+      const drafts = snap.val();
+      const count = Object.keys(drafts).length;
+      info.style.display = '';
+      info.textContent = `💾 저장된 임시저장 ${count}개`;
     }).catch(()=>{});
   }
 
-  // ── 저장된 데이터 불러오기
-  function loadFormData() {
-    idbLoad().then(d => {
-      if (!d) { showToast('저장된 내역이 없습니다'); return; }
-      if (!confirm('저장된 내역을 불러오면 현재 입력 내용이 초기화됩니다. 계속할까요?')) return;
-      const { config, leaders, players } = d;
+  // ── 임시저장 모달 ──────────────────────────────────────────────────
+  function openDraftModal() {
+    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    document.getElementById('draft-modal').style.display = '';
+    renderDraftList();
+  }
+  function closeDraftModal() {
+    document.getElementById('draft-modal').style.display = 'none';
+  }
+
+  async function renderDraftList() {
+    const area = document.getElementById('draft-list-area');
+    area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">불러오는 중...</div>';
+    if (!window._db || !window._dbFns) {
+      area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">Firebase 연결 중...</div>';
+      return;
+    }
+    const uid = window._currentUser?.id;
+    const { ref, get } = window._dbFns;
+    try {
+      const snap = await get(ref(window._db, `drafts/${uid}`));
+      if (!snap.exists()) {
+        area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">저장된 내역이 없습니다</div>';
+        return;
+      }
+      const drafts = snap.val();
+      // 최신순 정렬
+      const sorted = Object.entries(drafts).sort((a, b) => b[1].savedAt - a[1].savedAt);
+      area.innerHTML = '';
+      sorted.forEach(([draftId, d]) => {
+        const dt = new Date(d.savedAt);
+        const dateStr = `${dt.toLocaleDateString('ko-KR')} ${dt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;
+        const playerCount = d.players?.length || 0;
+        const item = document.createElement('div');
+        item.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;';
+        item.innerHTML = `
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.draftTitle || '제목 없음'}</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">${dateStr} · 선수 ${playerCount}명</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button onclick="loadDraft('${draftId}')" style="background:var(--accent);color:#000;border:none;border-radius:7px;padding:6px 13px;font-size:.8rem;font-weight:700;cursor:pointer;">불러오기</button>
+            <button onclick="deleteDraft('${draftId}')" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:6px 10px;font-size:.8rem;cursor:pointer;">삭제</button>
+          </div>`;
+        area.appendChild(item);
+      });
+    } catch(e) {
+      area.innerHTML = `<div style="text-align:center;color:#f87171;font-size:.85rem;padding:24px 0;">오류: ${e.message}</div>`;
+    }
+  }
+
+  async function loadDraft(draftId) {
+    if (!confirm('저장된 내역을 불러오면 현재 입력 내용이 초기화됩니다. 계속할까요?')) return;
+    const uid = window._currentUser?.id;
+    const { ref, get } = window._dbFns;
+    try {
+      const snap = await get(ref(window._db, `drafts/${uid}/${draftId}`));
+      if (!snap.exists()) { showToast('해당 저장 내역을 찾을 수 없습니다'); return; }
+      const { config, leaders, players } = snap.val();
       if (config.title)   document.getElementById('title').value           = config.title;
       if (config.teams)   document.getElementById('teamCount').value        = config.teams;
       if (config.members) document.getElementById('membersPerTeam').value   = config.members;
@@ -777,23 +856,21 @@
       if (config.timer)   document.getElementById('timerSec').value         = config.timer;
       if (config.minBid)  document.getElementById('minBid').value           = config.minBid;
 
-      // 팀장 사진 먼저 복원
       if (leaders) leaders.forEach((l, i) => { if (l.photo) leaderPhotos[i] = l.photo; });
       renderLeaders();
-      // 팀장 닉네임 복원 (렌더 후)
       setTimeout(() => {
         document.querySelectorAll('.l-name').forEach((el, i) => {
           if (leaders?.[i]?.name) el.value = leaders[i].name;
         });
       }, 50);
 
-      // 선수 카드 재생성
       document.getElementById('players-list').innerHTML = '';
       pc = 0;
       if (players?.length > 0) {
         players.forEach(p => {
           addPlayer();
-          const card = document.getElementById(`pfc-${pc}`);
+          const cid  = pc;   // addPlayer()가 pc++ 후 반환 — 현재 ID 캡처
+          const card = document.getElementById(`pfc-${cid}`);
           if (!card) return;
           if (p.name)     card.querySelector('.p-name').value  = p.name;
           if (p.role)     card.querySelector('.p-role').value  = p.role;
@@ -802,23 +879,37 @@
           if (p.peakTier) card.querySelector('.p-peak').value  = p.peakTier;
           if (p.style)    card.querySelector('.p-style').value = p.style;
           if (p.intro)    card.querySelector('.p-intro').value = p.intro;
-          if (p.hero1)  { card.querySelector('.p-h1').value = p.hero1; onHeroSelect(pc, 1, p.hero1); }
-          if (p.hero2)  { card.querySelector('.p-h2').value = p.hero2; onHeroSelect(pc, 2, p.hero2); }
-          if (p.hero3)  { card.querySelector('.p-h3').value = p.hero3; onHeroSelect(pc, 3, p.hero3); }
+          if (p.hero1)  { card.querySelector('.p-h1').value = p.hero1; onHeroSelect(cid, 1, p.hero1); }
+          if (p.hero2)  { card.querySelector('.p-h2').value = p.hero2; onHeroSelect(cid, 2, p.hero2); }
+          if (p.hero3)  { card.querySelector('.p-h3').value = p.hero3; onHeroSelect(cid, 3, p.hero3); }
           if (p.photo) {
             card.querySelector('.p-photo').value = p.photo;
-            const prev = document.getElementById(`pp-prev-${pc}`);
+            const prev = document.getElementById(`pp-prev-${cid}`);
             if (prev) prev.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" />`;
           }
-          if (p.grade) selGrade(pc, p.grade);
+          if (p.grade) selGrade(cid, p.grade);
         });
       } else {
         autoGeneratePlayers();
       }
       updateHint();
+      closeDraftModal();
       showToast('📂 불러오기 완료!');
-    }).catch(e => showToast('불러오기 실패: ' + e.message));
+    } catch(e) { showToast('불러오기 실패: ' + e.message); }
   }
+
+  async function deleteDraft(draftId) {
+    if (!confirm('이 임시저장을 삭제할까요?')) return;
+    const uid = window._currentUser?.id;
+    try {
+      await window._remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
+      showToast('삭제 완료');
+      renderDraftList();
+      checkSavedData();
+    } catch(e) { showToast('삭제 실패: ' + e.message); }
+  }
+
+  // ── (레거시) IndexedDB — 더 이상 사용하지 않으나 호환용 유지
 
   // ── 섹션 전환
   function showSection(name) {
@@ -830,7 +921,7 @@
     if (name === 'admin' && document.getElementById('admin-room-section').style.display !== 'none') loadRooms();
   }
 
-  // ── IndexedDB (localStorage 대신 - 용량 무제한)
+  // ── IndexedDB (레거시 — Firebase로 이전됨, 코드 호환용 유지)
   const DB_NAME = 'dohyeon_db', DB_STORE = 'form', DB_KEY = 'form_data';
   function openIDB() {
     return new Promise((res, rej) => {
