@@ -3,12 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OW 모의 경매</title>
+  <title>RØDE 도현 배 유인원 컵</title>
+  <meta name="description" content="By ONSIDE COMPANY" />
+  <!-- Open Graph (카카오톡, 디스코드 등 링크 미리보기) -->
+  <meta property="og:title" content="RØDE 도현 배 유인원 컵" />
+  <meta property="og:description" content="By ONSIDE COMPANY" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dohyeon-auction.vercel.app" />
+  <!-- 카카오톡 -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="RØDE 도현 배 유인원 컵" />
+  <meta name="twitter:description" content="By ONSIDE COMPANY" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     // ✅ Firebase 설정 붙여넣기
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
@@ -24,6 +34,7 @@
     const db  = getDatabase(app);
     window._db = db;
     window._dbFns = { ref, set, get };
+    window._remove = remove;
   </script>
   <style>
     :root {
@@ -32,7 +43,7 @@
       --danger:#ef4444; --success:#22c55e;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;font-size:1.05rem;letter-spacing:-0.03em;
       min-height:100vh;display:flex;flex-direction:column;align-items:center;
       padding:32px 16px;
       background-image:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,.08) 0%,transparent 60%),
@@ -46,7 +57,7 @@
     .card h2{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:20px;
       letter-spacing:-0.01em;text-transform:uppercase;}
     .fg{margin-bottom:12px;}
-    label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px;}
+    label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:5px;}
     input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);
       border-radius:8px;color:var(--text);padding:9px 12px;font-size:.9rem;
       font-family:inherit;outline:none;transition:border-color .2s;}
@@ -120,7 +131,7 @@
 <body>
 
 <div style="text-align:center;margin-bottom:4px;">
-  <div style="font-size:.85rem;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">RØDE와 함께하는</div>
+  <div style="font-size:1.1rem;font-family:'Black Han Sans',sans-serif;color:var(--muted);letter-spacing:1px;margin-bottom:4px;">RØDE와 함께하는</div>
   <div class="logo">도현 배 유인원 컵</div>
 </div>
 <p class="sub">오버워치 모의 경매 시스템</p>
@@ -220,12 +231,20 @@
 
 <script>
   const ROLES  = ['탱커','딜러','힐러'];
-  const TIERS  = ['언랭','브론즈1','브론즈2','브론즈3','실버1','실버2','실버3','골드1','골드2','골드3',
-                  '플래1','플래2','플래3','다이아1','다이아2','다이아3','마스터','그랜드마스터','챔피언'];
+  const TIERS  = [
+    '언랭',
+    '브론즈 5','브론즈 4','브론즈 3','브론즈 2','브론즈 1',
+    '실버 5','실버 4','실버 3','실버 2','실버 1',
+    '골드 5','골드 4','골드 3','골드 2','골드 1',
+    '플래티넘 5','플래티넘 4','플래티넘 3','플래티넘 2','플래티넘 1',
+    '다이아몬드 5','다이아몬드 4','다이아몬드 3','다이아몬드 2','다이아몬드 1',
+    '마스터 5','마스터 4','마스터 3','마스터 2','마스터 1',
+    '그랜드마스터 5','그랜드마스터 4','그랜드마스터 3','그랜드마스터 2','그랜드마스터 1',
+    '챔피언',
+  ];
   const STYLES = ['공격적 진입','안정적 서포트','한타 집중','포킹/라인전','유틸리티','플렉스 올라운더'];
 
-  // 오버워치 영웅 목록 (한국어명 → CDN 키)
-  const OW_HEROES = {
+const OW_HEROES = {
     // 탱커
     '디바':        'd.va',
     '라마트라':    'ramattra',
@@ -237,12 +256,11 @@
     '윈스턴':      'winston',
     '자리야':      'zarya',
     '정커퀸':      'junker-queen',
-    '토르비욘':    'torbjorn',
     '해머':        'wrecking-ball',
     // 딜러
     '겐지':        'genji',
     '맥크리':      'cassidy',
-    '미스포춘':    'misc-fortune',
+    '미스포춘':    'misfortune',
     '바스티온':    'bastion',
     '솔저76':      'soldier-76',
     '소전':        'sojourn',
@@ -255,9 +273,9 @@
     '애쉬':        'ashe',
     '리퍼':        'reaper',
     '트레이서':    'tracer',
-    '토르': 'torbjorn',
     '벤처':        'venture',
     '하자드':      'hazard',
+    '솜브라':      'sombra',
     // 힐러
     '아나':        'ana',
     '루시우':      'lucio',
@@ -267,21 +285,16 @@
     '브리기테':    'brigitte',
     '일라리':      'illari',
     '젠야타':      'zenyatta',
-    '커샌더':      'cassidy', // 미존재시 폴백
     '키리코':      'kiriko',
     '라이프위버':  'lifeweaver',
-    '정커':        'junkrat',
-    '클레오':      'juno',
+    '주노':        'juno',
   };
-
-  // CDN 이미지 URL 생성
-  function heroImgUrl(heroName) {
-    const key = OW_HEROES[heroName];
-    if (!key) return '';
-    return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${key}.png`;
-  }
-
   const HERO_NAMES = Object.keys(OW_HEROES);
+  function heroImgUrl(name) {
+    const k = OW_HEROES[name];
+    if (!k) return '';
+    return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
 
   // ── 팀 수 / 팀원 수 변경 시 → 팀장 + 선수 칸 자동 갱신
   function onConfigChange() {
@@ -624,7 +637,10 @@
             <div class="room-item-info">${title} · ${teamCount}팀 · 선수 ${settled}/${playerCount}명 낙찰</div>
             <div style="font-size:.7rem;margin-top:2px;color:${statusClr};">● ${statusTxt}</div>
           </div>
-          <button class="room-item-btn" onclick="location.href='admin.html?room=${code}'">입장</button>
+          <div style="display:flex;gap:6px;">
+            <button class="room-item-btn" onclick="location.href='admin.html?room=${code}'">입장</button>
+            <button class="room-item-btn" style="background:var(--danger);" onclick="deleteRoom('${code}')">🗑</button>
+          </div>
         </div>`;
       }).join('');
     } catch(e) {
@@ -632,7 +648,13 @@
     }
   }
 
-  function showToast(msg) {
+  async function deleteRoom(code) {
+    if (!confirm(`방 [${code}] 을 삭제하시겠습니까?\n모든 데이터가 영구 삭제됩니다.`)) return;
+    const { ref } = window._dbFns;
+    await window._remove(ref(window._db, `rooms/${code}`));
+    showToast(`✅ 방 ${code} 삭제됨`);
+    loadRooms();
+  }
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2800);

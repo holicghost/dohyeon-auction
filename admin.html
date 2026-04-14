@@ -292,23 +292,33 @@
   // ── 상수
   const ADMIN_PW_KEY = 'admin_pw_dohyeon';
   const DEFAULT_PW   = 'onside11!!';
-  const TIERS = ['언랭','브론즈1','브론즈2','브론즈3','실버1','실버2','실버3','골드1','골드2','골드3',
-                 '플래1','플래2','플래3','다이아1','다이아2','다이아3','마스터','그랜드마스터','챔피언'];
+  const TIERS = [
+    '언랭',
+    '브론즈 5','브론즈 4','브론즈 3','브론즈 2','브론즈 1',
+    '실버 5','실버 4','실버 3','실버 2','실버 1',
+    '골드 5','골드 4','골드 3','골드 2','골드 1',
+    '플래티넘 5','플래티넘 4','플래티넘 3','플래티넘 2','플래티넘 1',
+    '다이아몬드 5','다이아몬드 4','다이아몬드 3','다이아몬드 2','다이아몬드 1',
+    '마스터 5','마스터 4','마스터 3','마스터 2','마스터 1',
+    '그랜드마스터 5','그랜드마스터 4','그랜드마스터 3','그랜드마스터 2','그랜드마스터 1',
+    '챔피언',
+  ];
   const OW_HEROES = {
     '디바':'d.va','라마트라':'ramattra','라인하르트':'reinhardt','로드호그':'roadhog',
     '마우가':'mauga','시그마':'sigma','오리사':'orisa','윈스턴':'winston','자리야':'zarya',
     '정커퀸':'junker-queen','해머':'wrecking-ball','겐지':'genji','맥크리':'cassidy',
-    '미스포춘':'misc-fortune','바스티온':'bastion','솔저76':'soldier-76','소전':'sojourn',
+    '미스포춘':'misfortune','바스티온':'bastion','솔저76':'soldier-76','소전':'sojourn',
     '시메트라':'symmetra','에코':'echo','위도우메이커':'widowmaker','정커랫':'junkrat',
     '파라':'pharah','한조':'hanzo','애쉬':'ashe','리퍼':'reaper','트레이서':'tracer',
-    '벤처':'venture','하자드':'hazard','아나':'ana','루시우':'lucio','메르시':'mercy',
-    '모이라':'moira','바티스트':'baptiste','브리기테':'brigitte','일라리':'illari',
-    '젠야타':'zenyatta','키리코':'kiriko','라이프위버':'lifeweaver','주노':'juno',
+    '벤처':'venture','하자드':'hazard','솜브라':'sombra',
+    '아나':'ana','루시우':'lucio','메르시':'mercy','모이라':'moira','바티스트':'baptiste',
+    '브리기테':'brigitte','일라리':'illari','젠야타':'zenyatta','키리코':'kiriko',
+    '라이프위버':'lifeweaver','주노':'juno',
   };
   const HERO_NAMES = Object.keys(OW_HEROES);
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
-    return k ? `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png` : '';
+    return k ? `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png` : '';
   }
 
   // ── 방 코드
