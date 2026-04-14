@@ -378,59 +378,72 @@
     '그랜드마스터 5','그랜드마스터 4','그랜드마스터 3','그랜드마스터 2','그랜드마스터 1',
     '챔피언 5','챔피언 4','챔피언 3','챔피언 2','챔피언 1',
   ];
-  const OW_HEROES = {
-    // 탱커
-    '디바':        'd.va',
-    '라마트라':    'ramattra',
-    '라인하르트':  'reinhardt',
-    '로드호그':    'roadhog',
-    '마우가':      'mauga',
-    '시그마':      'sigma',
-    '오리사':      'orisa',
-    '윈스턴':      'winston',
-    '자리야':      'zarya',
-    '정커퀸':      'junker-queen',
-    '해머':        'wrecking-ball',
-    // 딜러
-    '겐지':        'genji',
-    '맥크리':      'cassidy',
-    '미스포춘':    'misfortune',
-    '바스티온':    'bastion',
-    '솔저76':      'soldier-76',
-    '소전':        'sojourn',
-    '시메트라':    'symmetra',
-    '에코':        'echo',
-    '위도우메이커': 'widowmaker',
-    '정크랫':      'junkrat',
-    '파라':        'pharah',
-    '한조':        'hanzo',
-    '애쉬':        'ashe',
-    '리퍼':        'reaper',
-    '트레이서':    'tracer',
-    '벤처':        'venture',
-    '하자드':      'hazard',
-    '솜브라':      'sombra',
-    // 힐러
-    '아나':        'ana',
-    '루시우':      'lucio',
-    '메르시':      'mercy',
-    '모이라':      'moira',
-    '바티스트':    'baptiste',
-    '브리기테':    'brigitte',
-    '일라리':      'illari',
-    '젠야타':      'zenyatta',
-    '키리코':      'kiriko',
-    '라이프위버':  'lifeweaver',
-    '주노':        'juno',
+  const OW_HEROES_BY_ROLE = {
+    '딜러': {
+      '겐지':'genji', '맥크리':'cassidy', '미스포춘':'misfortune',
+      '바스티온':'bastion', '벤처':'venture', '솔저76':'soldier-76',
+      '솜브라':'sombra', '소전':'sojourn', '시메트라':'symmetra',
+      '애쉬':'ashe', '에코':'echo', '위도우메이커':'widowmaker',
+      '정크랫':'junkrat', '파라':'pharah', '하자드':'hazard',
+      '한조':'hanzo', '리퍼':'reaper', '트레이서':'tracer',
+    },
+    '힐러': {
+      '루시우':'lucio', '메르시':'mercy', '모이라':'moira',
+      '바티스트':'baptiste', '브리기테':'brigitte', '아나':'ana',
+      '일라리':'illari', '젠야타':'zenyatta', '주노':'juno',
+      '키리코':'kiriko', '라이프위버':'lifeweaver',
+    },
+    '탱커': {
+      '디바':'d.va', '라마트라':'ramattra', '라인하르트':'reinhardt',
+      '로드호그':'roadhog', '마우가':'mauga', '시그마':'sigma',
+      '오리사':'orisa', '윈스턴':'winston', '자리야':'zarya',
+      '정커퀸':'junker-queen', '해머':'wrecking-ball',
+    },
   };
-  // OW1 구 영웅: blzgdapipro CDN, OW2 신규 영웅: d15f34w2p8l1cc CDN
+  const OW_HEROES = Object.assign({}, ...Object.values(OW_HEROES_BY_ROLE));
   const OW2_NEW = new Set(['ramattra','kiriko','lifeweaver','juno','sojourn','junker-queen','mauga','venture','illari','hazard']);
   const HERO_NAMES = Object.keys(OW_HEROES).sort((a,b) => a.localeCompare(b, 'ko'));
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
     if (!k) return '';
-    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
+    // CDN 슬러그 재정의 (점·특수문자 제거 등)
+    const SLUG_FIX = {
+      'd.va':         'dva',
+      'wrecking-ball':'wrecking-ball',
+    };
+    const slug = SLUG_FIX[k] || k;
+    if (OW2_NEW.has(k)) {
+      return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${slug}.png`;
+    }
+    // OW1 영웅이지만 점이 있는 슬러그(d.va)는 URL에 그대로 써도 됨
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
+  // 이미지 로드 실패 시 대체 CDN 시도
+  function heroImgHtml(name, cls='') {
+    const primary = heroImgUrl(name);
+    if (!primary) return '<span style="font-size:1.1rem">🎮</span>';
+    // 미스포춘, 주노 등 누락 가능 영웅은 두 CDN 모두 시도
+    const k = OW_HEROES[name] || '';
+    const fallback = OW2_NEW.has(k)
+      ? \`https://blzgdapipro-a.akamaihd.net/hero/\${k}/icon-portrait.png\`
+      : \`https://d15f34w2p8l1cc.cloudfront.net/overwatch/\${(k||'').replace('.','')}.png\`;
+    return \`<img src="\${primary}" class="\${cls}"
+      style="width:100%;height:100%;object-fit:cover;"
+      onerror="this.src='\${fallback}';this.onerror=function(){this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'}" />\`;
+  }
+  function buildHeroSelectOptions() {
+    const parts = ['<option value="">-- 영웅 선택 --</option>'];
+    const roleLabel = { '딜러':'⚔️ 딜러', '힐러':'💚 힐러 (선택 불가)', '탱커':'🛡️ 탱커 (선택 불가)' };
+    for (const [role, heroes] of Object.entries(OW_HEROES_BY_ROLE)) {
+      const disabled = role !== '딜러';
+      const sorted = Object.keys(heroes).sort((a,b) => a.localeCompare(b, 'ko'));
+      parts.push(`<optgroup label="${roleLabel[role]}">`);
+      for (const name of sorted) {
+        parts.push(`<option value="${name}"${disabled ? ' disabled' : ''}>${name}</option>`);
+      }
+      parts.push('</optgroup>');
+    }
+    return parts.join('');
   }
 
   // ── 방 코드
@@ -532,14 +545,14 @@
       document.getElementById(id).innerHTML = tierHtml;
     });
     // 선수 추가 폼 영웅 선택
-    const heroHtml = HERO_NAMES.map(h => `<option>${h}</option>`).join('');
+    const heroHtml = buildHeroSelectOptions();
     document.getElementById('np-hero-wrap').innerHTML = [1,2,3].map(n => `
       <div class="hero-row" style="margin-bottom:7px;">
         <div id="np-hi-${n}" class="hero-thumb">🎮</div>
         <select id="np-h${n}" style="flex:1;background:var(--surface2);border:1px solid var(--border);
           border-radius:8px;color:var(--text);padding:7px 10px;font-size:.85rem;font-family:inherit;outline:none;"
           onchange="npHeroSelect(${n},this.value)">
-          <option value="">-- 영웅 선택 --</option>${heroHtml}
+          ${heroHtml}
         </select>
       </div>`).join('');
   }
@@ -842,7 +855,7 @@
     const roleOpts  = ['딜러','탱커','힐러'].map(r=>`<option${r===p.role?' selected':''}>${r}</option>`).join('');
     const gradeOpts = ['고','저'].map(g=>`<option${g===p.grade?' selected':''}>${g}</option>`).join('');
     const tOpts = sel => TIERS.map(t=>`<option${t===sel?' selected':''}>${t}</option>`).join('');
-    const heroHtml = HERO_NAMES.map(h=>`<option>${h}</option>`).join('');
+    const heroHtml = buildHeroSelectOptions();
     const heroRow = (n, val) => {
       const url = heroImgUrl(val);
       const thumb = url
@@ -853,7 +866,7 @@
         <select id="ph${n}-${pid}" style="flex:1;background:var(--surface2);border:1px solid var(--border);
           border-radius:8px;color:var(--text);padding:6px 10px;font-size:.82rem;font-family:inherit;outline:none;"
           onchange="pHeroSelect('${pid}',${n},this.value)">
-          <option value="">-- 영웅 선택 --</option>${heroHtml}
+          ${heroHtml}
         </select>
       </div>`;
     };

@@ -428,8 +428,30 @@
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
     if (!k) return '';
-    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
+    // CDN 슬러그 재정의 (점·특수문자 제거 등)
+    const SLUG_FIX = {
+      'd.va':         'dva',
+      'wrecking-ball':'wrecking-ball',
+    };
+    const slug = SLUG_FIX[k] || k;
+    if (OW2_NEW.has(k)) {
+      return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${slug}.png`;
+    }
+    // OW1 영웅이지만 점이 있는 슬러그(d.va)는 URL에 그대로 써도 됨
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
+  // 이미지 로드 실패 시 대체 CDN 시도
+  function heroImgHtml(name, cls='') {
+    const primary = heroImgUrl(name);
+    if (!primary) return '<span style="font-size:1.1rem">🎮</span>';
+    // 미스포춘, 주노 등 누락 가능 영웅은 두 CDN 모두 시도
+    const k = OW_HEROES[name] || '';
+    const fallback = OW2_NEW.has(k)
+      ? \`https://blzgdapipro-a.akamaihd.net/hero/\${k}/icon-portrait.png\`
+      : \`https://d15f34w2p8l1cc.cloudfront.net/overwatch/\${(k||'').replace('.','')}.png\`;
+    return \`<img src="\${primary}" class="\${cls}"
+      style="width:100%;height:100%;object-fit:cover;"
+      onerror="this.src='\${fallback}';this.onerror=function(){this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'}" />\`;
   }
   function renderHeroes(heroes) {
     return heroes.filter(Boolean).map(h => {
