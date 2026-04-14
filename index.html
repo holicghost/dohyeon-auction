@@ -175,6 +175,18 @@
   <button class="btn btn-sec" onclick="joinRoom()">입장하기 →</button>
 </div>
 
+<div style="width:100%;max-width:580px"><div class="divider">또는</div></div>
+
+<div class="card">
+  <h2>⚙ 관리자 패널</h2>
+  <div class="fg">
+    <label>방 코드 입력</label>
+    <input type="text" id="admin-room-code" placeholder="예: ABC123"
+      style="text-transform:uppercase;letter-spacing:3px;font-size:1.2rem;text-align:center;" />
+  </div>
+  <button class="btn btn-sec" onclick="goAdmin()" style="border-color:var(--accent);color:var(--accent);">⚙ 관리자 입장 →</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <footer style="margin-top:32px;padding-bottom:24px;text-align:center;">
@@ -257,6 +269,14 @@
     updateHint();
   }
 
+  // 선수 번호 순서 재정렬
+  function reorderPlayers() {
+    document.querySelectorAll('.pfc').forEach((card, i) => {
+      const span = card.querySelector('.pfc-order');
+      if (span) span.textContent = i + 1;
+    });
+  }
+
   function updateHint() {
     const teams   = parseInt(document.getElementById('teamCount').value);
     const members = parseInt(document.getElementById('membersPerTeam').value) || 6;
@@ -266,6 +286,7 @@
       `${teams}팀 × ${members}명 = 총 ${total}명 &nbsp;|&nbsp; 팀장 ${teams}명 + 경매 대상 <strong>${players}명</strong>`;
     document.getElementById('players-count-badge').textContent =
       `(${document.querySelectorAll('.pfc').length}/${players}명)`;
+    reorderPlayers();
   }
 
   // ── 팀장 렌더
@@ -341,8 +362,8 @@
     const d  = document.createElement('div');
     d.className = 'pfc'; d.id = `pfc-${id}`;
     d.innerHTML = `
-      <div class="pfc-num">선수 #${id}</div>
-      <button class="remove-btn" onclick="document.getElementById('pfc-${id}').remove();updateHint()">✕</button>
+      <div class="pfc-num">선수 #<span class="pfc-order">-</span></div>
+      <button class="remove-btn" onclick="document.getElementById('pfc-${id}').remove();updateHint();reorderPlayers()">✕</button>
 
       <div class="r2" style="margin-bottom:10px;">
         <div class="fg" style="margin:0;"><label>닉네임 *</label>
@@ -537,6 +558,15 @@
     const snap = await get(ref(window._db, `rooms/${code}`));
     if (!snap.exists()) { showToast('존재하지 않는 방입니다'); return; }
     window.location.href = `auction.html?room=${code}`;
+  }
+
+  async function goAdmin() {
+    const { ref, get } = window._dbFns;
+    const code = document.getElementById('admin-room-code').value.trim().toUpperCase();
+    if (!code) { showToast('방 코드를 입력해주세요'); return; }
+    const snap = await get(ref(window._db, `rooms/${code}`));
+    if (!snap.exists()) { showToast('존재하지 않는 방입니다'); return; }
+    window.location.href = `admin.html?room=${code}`;
   }
 
   function showToast(msg) {
