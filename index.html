@@ -101,6 +101,15 @@
       border-radius:8px;width:100%;padding:10px;font-size:.85rem;cursor:pointer;
       font-family:inherit;margin-top:4px;transition:all .2s;}
     .add-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+    .room-item{display:flex;align-items:center;justify-content:space-between;
+      background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      padding:10px 14px;margin-bottom:8px;}
+    .room-item-code{font-family:'Black Han Sans',sans-serif;font-size:1.1rem;color:var(--accent);letter-spacing:3px;}
+    .room-item-info{font-size:.75rem;color:var(--muted);margin-top:2px;}
+    .room-item-btn{background:linear-gradient(135deg,var(--accent),#d97706);border:none;
+      border-radius:7px;color:#0a0e1a;font-weight:700;font-family:inherit;font-size:.78rem;
+      padding:6px 14px;cursor:pointer;white-space:nowrap;}
+    .room-item-btn:hover{opacity:.85;}
     .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
       background:var(--surface2);border:1px solid var(--border);color:var(--text);
       padding:12px 24px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;
@@ -179,12 +188,24 @@
 
 <div class="card">
   <h2>⚙ 관리자 패널</h2>
-  <div class="fg">
-    <label>방 코드 입력</label>
-    <input type="text" id="admin-room-code" placeholder="예: ABC123"
-      style="text-transform:uppercase;letter-spacing:3px;font-size:1.2rem;text-align:center;" />
+  <!-- 비밀번호 입력 -->
+  <div id="admin-pw-section">
+    <div class="fg">
+      <label>관리자 비밀번호</label>
+      <input type="password" id="admin-pw-input" placeholder="비밀번호 입력"
+        style="font-size:1.1rem;text-align:center;letter-spacing:3px;"
+        onkeydown="if(event.key==='Enter')checkAdminPw()" />
+    </div>
+    <button class="btn btn-sec" onclick="checkAdminPw()" style="border-color:var(--accent);color:var(--accent);">⚙ 확인 →</button>
   </div>
-  <button class="btn btn-sec" onclick="goAdmin()" style="border-color:var(--accent);color:var(--accent);">⚙ 관리자 입장 →</button>
+  <!-- 방 목록 (비밀번호 인증 후 표시) -->
+  <div id="admin-room-section" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:.8rem;color:var(--muted);">열려있는 방 목록</span>
+      <button onclick="loadRooms()" style="background:none;border:none;color:var(--accent2);font-size:.78rem;cursor:pointer;font-family:inherit;">🔄 새로고침</button>
+    </div>
+    <div id="admin-room-list"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -560,13 +581,55 @@
     window.location.href = `auction.html?room=${code}`;
   }
 
-  async function goAdmin() {
+  const ADMIN_PW_KEY = 'admin_pw_dohyeon';
+  const DEFAULT_PW   = 'onside11!!';
+  function getAdminPw() { return localStorage.getItem(ADMIN_PW_KEY) || DEFAULT_PW; }
+
+  function checkAdminPw() {
+    const val = document.getElementById('admin-pw-input').value;
+    if (val === getAdminPw()) {
+      document.getElementById('admin-pw-section').style.display = 'none';
+      document.getElementById('admin-room-section').style.display = '';
+      loadRooms();
+    } else {
+      showToast('비밀번호가 틀렸습니다');
+      document.getElementById('admin-pw-input').value = '';
+      document.getElementById('admin-pw-input').focus();
+    }
+  }
+
+  async function loadRooms() {
     const { ref, get } = window._dbFns;
-    const code = document.getElementById('admin-room-code').value.trim().toUpperCase();
-    if (!code) { showToast('방 코드를 입력해주세요'); return; }
-    const snap = await get(ref(window._db, `rooms/${code}`));
-    if (!snap.exists()) { showToast('존재하지 않는 방입니다'); return; }
-    window.location.href = `admin.html?room=${code}`;
+    const listEl = document.getElementById('admin-room-list');
+    listEl.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:12px;">불러오는 중...</div>`;
+    try {
+      const snap = await get(ref(window._db, 'rooms'));
+      if (!snap.exists()) {
+        listEl.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:12px;">방이 없습니다</div>`;
+        return;
+      }
+      const rooms = snap.val();
+      const entries = Object.entries(rooms).sort((a,b) => (b[1].meta?.createdAt||0) - (a[1].meta?.createdAt||0));
+      listEl.innerHTML = entries.map(([code, room]) => {
+        const status   = room.auction?.status || 'waiting';
+        const statusTxt = status==='waiting'?'대기 중':status==='finished'?'완료':'진행 중';
+        const statusClr = status==='waiting'?'var(--muted)':status==='finished'?'var(--success)':'var(--accent)';
+        const teamCount = Object.keys(room.teams||{}).length;
+        const playerCount = Object.keys(room.players||{}).length;
+        const settled = Object.values(room.players||{}).filter(p=>p.assignedTo!=null).length;
+        const title = room.meta?.title || code;
+        return `<div class="room-item">
+          <div>
+            <div class="room-item-code">${code}</div>
+            <div class="room-item-info">${title} · ${teamCount}팀 · 선수 ${settled}/${playerCount}명 낙찰</div>
+            <div style="font-size:.7rem;margin-top:2px;color:${statusClr};">● ${statusTxt}</div>
+          </div>
+          <button class="room-item-btn" onclick="location.href='admin.html?room=${code}'">입장</button>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div style="color:var(--danger);font-size:.82rem;text-align:center;padding:12px;">오류가 발생했습니다</div>`;
+    }
   }
 
   function showToast(msg) {
