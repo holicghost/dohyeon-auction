@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OW 모의 경매</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    // ✅ Firebase 설정 붙여넣기
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6",
+      measurementId: "G-SKKD38LT76"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+    window._db = db;
+    window._dbFns = { ref, set, get };
+  </script>
+  <style>
+    :root {
+      --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e3a5f;
+      --accent:#f59e0b; --accent2:#3b82f6; --text:#e2e8f0; --muted:#64748b;
+      --danger:#ef4444; --success:#22c55e;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;
+      min-height:100vh;display:flex;flex-direction:column;align-items:center;
+      padding:32px 16px;
+      background-image:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,.08) 0%,transparent 60%),
+                       radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.08) 0%,transparent 60%);}
+    .logo{font-family:'Black Han Sans',sans-serif;font-size:2.4rem;letter-spacing:2px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+    .sub{color:var(--muted);font-size:.9rem;margin-bottom:40px;text-align:center;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+      padding:28px;width:100%;max-width:580px;margin-bottom:16px;}
+    .card h2{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:20px;
+      letter-spacing:-0.01em;text-transform:uppercase;}
+    .fg{margin-bottom:12px;}
+    label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px;}
+    input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);padding:9px 12px;font-size:.9rem;
+      font-family:inherit;outline:none;transition:border-color .2s;}
+    textarea{resize:vertical;min-height:48px;}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
+    .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+    .btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:1rem;
+      font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:8px;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#d97706);color:#0a0e1a;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,158,11,.4);}
+    .btn-sec{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+    .btn-sec:hover{border-color:var(--accent2);}
+    .divider{text-align:center;color:var(--muted);font-size:.8rem;margin:8px 0 24px;position:relative;}
+    .divider::before,.divider::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--border);}
+    .divider::before{left:0;}.divider::after{right:0;}
+    .sec-title{font-size:.82rem;color:var(--muted);margin:20px 0 10px;font-weight:500;letter-spacing:-0.02em;}
+    .leader-item{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+    .leader-num{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--muted);flex-shrink:0;}
+
+    /* 선수 폼 카드 */
+    .pfc{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+      padding:16px;margin-bottom:12px;position:relative;}
+    .pfc-num{font-size:.72rem;color:var(--accent);font-weight:700;margin-bottom:10px;letter-spacing:1px;}
+    .remove-btn{position:absolute;top:12px;right:12px;background:none;border:none;
+      color:var(--muted);cursor:pointer;font-size:1rem;transition:color .2s;}
+    .remove-btn:hover{color:var(--danger);}
+
+    /* 등급 버튼 */
+    .grade-group{display:flex;gap:6px;flex-wrap:wrap;}
+    .grade-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+      background:var(--surface);color:var(--muted);font-size:.75rem;font-family:inherit;
+      cursor:pointer;transition:all .15s;}
+    .grade-btn.sel-고{background:#ef4444;color:#fff;border-color:#ef4444;}
+    .grade-btn.sel-저{background:#3b82f6;color:#fff;border-color:#3b82f6;}
+
+    .add-btn{background:none;border:1px dashed var(--border);color:var(--muted);
+      border-radius:8px;width:100%;padding:10px;font-size:.85rem;cursor:pointer;
+      font-family:inherit;margin-top:4px;transition:all .2s;}
+    .add-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+      background:var(--surface2);border:1px solid var(--border);color:var(--text);
+      padding:12px 24px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;
+      transition:opacity .3s;z-index:999;}
+    .toast.show{opacity:1;}
+  </style>
+</head>
+<body>
+
+<div style="text-align:center;margin-bottom:4px;">
+  <div style="font-size:.85rem;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">RØDE와 함께하는</div>
+  <div class="logo">도현 배 유인원 컵</div>
+</div>
+<p class="sub">오버워치 모의 경매 시스템</p>
+
+<!-- 방 만들기 -->
+<div class="card">
+  <h2>🏆 새 경매 방 만들기</h2>
+  <div class="fg">
+    <label>경매 타이틀</label>
+    <input type="text" id="title" value="도현 유인원 컵" />
+  </div>
+
+  <!-- 팀 수 / 팀원 수 / 포인트 -->
+  <div class="r3">
+    <div class="fg">
+      <label>팀 수</label>
+      <select id="teamCount" onchange="onConfigChange()">
+        <option value="2">2팀</option><option value="3">3팀</option>
+        <option value="4">4팀</option><option value="5" selected>5팀</option><option value="6">6팀</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>팀당 인원 (팀장 포함)</label>
+      <input type="number" id="membersPerTeam" value="6" min="2" max="12" onchange="onConfigChange()" />
+    </div>
+    <div class="fg"><label>팀당 포인트</label><input type="number" id="points" value="1000" min="10" /></div>
+  </div>
+
+  <!-- 자동 계산 안내 -->
+  <div id="player-count-hint" style="font-size:.8rem;color:var(--accent);background:rgba(245,158,11,.08);
+    border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;">
+    5팀 × 6명 = 총 30명 | 팀장 5명 + 경매 대상 <strong>25명</strong>
+  </div>
+
+  <div class="r2">
+    <div class="fg"><label>입찰 시간 (초)</label><input type="number" id="timerSec" value="10" min="5" max="60" /></div>
+    <div class="fg"><label>최소 입찰 단위</label><input type="number" id="minBid" value="10" min="1" /></div>
+  </div>
+
+  <p class="sec-title">팀장 이름</p>
+  <div id="leaders-list"></div>
+
+  <p class="sec-title">
+    경매 선수 목록
+    <span id="players-count-badge" style="font-size:.75rem;color:var(--muted);font-weight:400;margin-left:8px;"></span>
+  </p>
+  <div id="players-list"></div>
+  <button class="add-btn" onclick="addPlayer()">+ 선수 수동 추가</button>
+  <button class="btn btn-primary" id="create-btn" onclick="createRoom()">방 만들기 →</button>
+</div>
+
+<div style="width:100%;max-width:580px"><div class="divider">또는</div></div>
+
+<div class="card">
+  <h2>🔗 기존 방 참여</h2>
+  <div class="fg">
+    <label>방 코드 입력</label>
+    <input type="text" id="join-code" placeholder="예: ABC123"
+      style="text-transform:uppercase;letter-spacing:3px;font-size:1.2rem;text-align:center;" />
+  </div>
+  <button class="btn btn-sec" onclick="joinRoom()">입장하기 →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer style="margin-top:32px;padding-bottom:24px;text-align:center;">
+  <a href="https://www.onsidecompany.co.kr/" target="_blank" rel="noopener"
+    style="color:var(--muted);font-size:.72rem;text-decoration:none;letter-spacing:.5px;
+           transition:color .2s;line-height:1.8;">
+    Copyright ⓒ 2026 ONSIDE COMPANY Co., Ltd.<br>All rights reserved.
+  </a>
+</footer>
+
+<script>
+  const ROLES  = ['탱커','딜러','힐러','유동'];
+  const TIERS  = ['언랭','브론즈1','브론즈2','브론즈3','실버1','실버2','실버3','골드1','골드2','골드3',
+                  '플래1','플래2','플래3','다이아1','다이아2','다이아3','마스터','그랜드마스터','챔피언'];
+  const STYLES = ['공격적 진입','안정적 서포트','한타 집중','포킹/라인전','유틸리티','플렉스 올라운더'];
+
+  // ── 팀 수 / 팀원 수 변경 시 → 팀장 + 선수 칸 자동 갱신
+  function onConfigChange() {
+    renderLeaders();
+    autoGeneratePlayers();
+    updateHint();
+  }
+
+  function updateHint() {
+    const teams   = parseInt(document.getElementById('teamCount').value);
+    const members = parseInt(document.getElementById('membersPerTeam').value) || 6;
+    const total   = teams * members;
+    const players = total - teams; // 팀장 제외
+    document.getElementById('player-count-hint').innerHTML =
+      `${teams}팀 × ${members}명 = 총 ${total}명 &nbsp;|&nbsp; 팀장 ${teams}명 + 경매 대상 <strong>${players}명</strong>`;
+    document.getElementById('players-count-badge').textContent =
+      `(${document.querySelectorAll('.pfc').length}/${players}명)`;
+  }
+
+  // ── 팀장 렌더
+  function renderLeaders() {
+    const count = parseInt(document.getElementById('teamCount').value);
+    const list  = document.getElementById('leaders-list');
+    const prev  = [...list.querySelectorAll('input')].map(i => i.value);
+    list.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'leader-item';
+      d.innerHTML = `<div class="leader-num">${i+1}</div>
+        <input type="text" placeholder="팀장 ${i+1} 닉네임" value="${prev[i]||''}" />`;
+      list.appendChild(d);
+    }
+  }
+
+  // ── 선수 칸 자동 생성 (팀수 × 팀원수 - 팀수)
+  function autoGeneratePlayers() {
+    const teams   = parseInt(document.getElementById('teamCount').value);
+    const members = parseInt(document.getElementById('membersPerTeam').value) || 6;
+    const needed  = teams * (members - 1); // 팀장 제외한 경매 대상 수
+
+    const list    = document.getElementById('players-list');
+    const current = list.querySelectorAll('.pfc').length;
+
+    if (current < needed) {
+      // 부족하면 추가
+      for (let i = current; i < needed; i++) addPlayer();
+    } else if (current > needed) {
+      // 넘치면 뒤에서 삭제 (닉네임 비어있는 것만)
+      const cards = [...list.querySelectorAll('.pfc')].reverse();
+      let toRemove = current - needed;
+      for (const card of cards) {
+        if (toRemove <= 0) break;
+        const name = card.querySelector('.p-name').value.trim();
+        if (!name) { card.remove(); toRemove--; }
+      }
+    }
+    updateHint();
+  }
+
+  // ── 선수 폼 카드 추가
+  let pc = 0;
+  function addPlayer() {
+    pc++;
+    const id = pc;
+    const d  = document.createElement('div');
+    d.className = 'pfc'; d.id = `pfc-${id}`;
+    d.innerHTML = `
+      <div class="pfc-num">선수 #${id}</div>
+      <button class="remove-btn" onclick="document.getElementById('pfc-${id}').remove();updateHint()">✕</button>
+
+      <div class="r2" style="margin-bottom:10px;">
+        <div class="fg" style="margin:0;"><label>닉네임 *</label>
+          <input class="p-name" type="text" placeholder="인게임 닉네임" /></div>
+        <div class="fg" style="margin:0;"><label>포지션 *</label>
+          <select class="p-role">${ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="margin-bottom:6px;">등급</label>
+        <div class="grade-group">
+          <button type="button" class="grade-btn sel-고" data-id="${id}" data-v="고" onclick="selGrade(${id},'고')">🔴 고티어</button>
+          <button type="button" class="grade-btn" data-id="${id}" data-v="저" onclick="selGrade(${id},'저')">🔵 저티어</button>
+        </div>
+        <input type="hidden" class="p-grade" value="고" />
+      </div>
+
+      <div class="r3" style="margin-bottom:10px;">
+        <div class="fg" style="margin:0;"><label>현재 티어</label>
+          <select class="p-cur">${TIERS.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <div class="fg" style="margin:0;"><label>전 시즌 티어</label>
+          <select class="p-prev">${TIERS.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <div class="fg" style="margin:0;"><label>역대 최고 티어</label>
+          <select class="p-peak">${TIERS.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      </div>
+
+      <div class="r2" style="margin-bottom:10px;">
+        <div class="fg" style="margin:0;"><label>선호 영웅 1</label>
+          <input class="p-h1" type="text" placeholder="예: 라인하르트" /></div>
+        <div class="fg" style="margin:0;"><label>선호 영웅 2</label>
+          <input class="p-h2" type="text" placeholder="예: 아나" /></div>
+      </div>
+      <div class="r2" style="margin-bottom:10px;">
+        <div class="fg" style="margin:0;"><label>선호 영웅 3</label>
+          <input class="p-h3" type="text" placeholder="예: 루시우" /></div>
+        <div class="fg" style="margin:0;"><label>플레이 스타일</label>
+          <select class="p-style">${STYLES.map(s=>`<option>${s}</option>`).join('')}</select></div>
+      </div>
+
+      <div class="fg" style="margin:0;"><label>한 줄 소개 (어필 포인트)</label>
+        <input class="p-intro" type="text" placeholder="예: 고점 뜨면 못 말려요" /></div>
+    `;
+    document.getElementById('players-list').appendChild(d);
+    updateHint();
+  }
+
+  function selGrade(id, v) {
+    const card = document.getElementById(`pfc-${id}`);
+    card.querySelectorAll('.grade-btn').forEach(b => {
+      b.className = 'grade-btn' + (b.dataset.v === v ? ` sel-${v}` : '');
+    });
+    card.querySelector('.p-grade').value = v;
+  }
+
+  // ── 방 만들기
+  async function createRoom() {
+    const { ref, set } = window._dbFns;
+    const db = window._db;
+    const title          = document.getElementById('title').value.trim() || '도현 유인원 컵';
+    const teamCount      = parseInt(document.getElementById('teamCount').value);
+    const membersPerTeam = parseInt(document.getElementById('membersPerTeam').value) || 6;
+    const points         = parseInt(document.getElementById('points').value);
+    const timerSec       = parseInt(document.getElementById('timerSec').value);
+    const minBid         = parseInt(document.getElementById('minBid').value);
+
+    const leaders = [...document.querySelectorAll('#leaders-list input')]
+      .map((el,i) => el.value.trim() || `팀장${i+1}`);
+
+    const players = [];
+    document.querySelectorAll('.pfc').forEach(card => {
+      const name = card.querySelector('.p-name').value.trim();
+      if (!name) return;
+      players.push({
+        name,
+        role:     card.querySelector('.p-role').value,
+        grade:    card.querySelector('.p-grade').value,
+        curTier:  card.querySelector('.p-cur').value,
+        prevTier: card.querySelector('.p-prev').value,
+        peakTier: card.querySelector('.p-peak').value,
+        hero1:    card.querySelector('.p-h1').value.trim(),
+        hero2:    card.querySelector('.p-h2').value.trim(),
+        hero3:    card.querySelector('.p-h3').value.trim(),
+        style:    card.querySelector('.p-style').value,
+        intro:    card.querySelector('.p-intro').value.trim(),
+        assignedTo: null
+      });
+    });
+
+    if (players.length === 0) { showToast('선수를 1명 이상 입력해주세요!'); return; }
+
+    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    const teams = {};
+    leaders.forEach((name, i) => {
+      teams[`team_${i}`] = {
+        name, points, members: [],
+        leaderToken: Math.random().toString(36).substring(2, 10)
+      };
+    });
+
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    const playersObj = {};
+    shuffled.forEach((p, i) => { playersObj[`player_${i}`] = p; });
+
+    const roomData = {
+      meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now() },
+      teams,
+      players: playersObj,
+      auction: {
+        status: 'waiting',
+        order: Object.keys(playersObj),
+        currentPlayer: null,
+        currentBid: 0,
+        currentLeader: null,
+        timerEndsAt: null
+      }
+    };
+
+    try {
+      const btn = document.getElementById('create-btn');
+      btn.textContent = '생성 중...'; btn.style.opacity = '.5'; btn.style.pointerEvents = 'none';
+      await set(ref(db, `rooms/${roomCode}`), roomData);
+      showToast(`방 생성 완료! 코드: ${roomCode}`);
+      setTimeout(() => { window.location.href = `host.html?room=${roomCode}`; }, 1200);
+    } catch(e) {
+      showToast('오류: Firebase 설정을 확인해주세요'); console.error(e);
+      const btn = document.getElementById('create-btn');
+      btn.textContent = '방 만들기 →'; btn.style.opacity = ''; btn.style.pointerEvents = '';
+    }
+  }
+
+  async function joinRoom() {
+    const { ref, get } = window._dbFns;
+    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    if (!code) { showToast('방 코드를 입력해주세요'); return; }
+    const snap = await get(ref(window._db, `rooms/${code}`));
+    if (!snap.exists()) { showToast('존재하지 않는 방입니다'); return; }
+    window.location.href = `auction.html?room=${code}`;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // 초기화
+  renderLeaders();
+  autoGeneratePlayers(); // 5팀 × (6-1) = 25명 자동 생성
+</script>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주최자 - OW 경매</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    // ✅ Firebase 설정 붙여넣기
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6",
+      measurementId: "G-SKKD38LT76"
+    };
+    const app = initializeApp(firebaseConfig);
+    window._db = getDatabase(app);
+    window._dbFns = { ref, onValue, update };
+  </script>
+  <style>
+    :root{
+      --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
+      --accent:#f59e0b;--accent2:#3b82f6;--text:#e2e8f0;--muted:#64748b;
+      --danger:#ef4444;--success:#22c55e;--preview:#818cf8;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;
+      min-height:100vh;padding:16px;
+      background-image:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,.06) 0%,transparent 60%),
+                       radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.06) 0%,transparent 60%);}
+    .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+    .logo{font-family:'Pretendard',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:-0.02em;color:#f59e0b;}
+    .room-pill{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      padding:7px 14px;font-size:.82rem;color:var(--muted);}
+    .room-pill span{color:var(--accent);font-weight:700;letter-spacing:3px;}
+    .copy-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;
+      padding:4px 10px;font-size:.72rem;cursor:pointer;font-family:inherit;margin-left:8px;transition:all .2s;}
+    .copy-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;}
+    .card-title{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+    .full{grid-column:1/-1;}
+
+    /* ── 선수 카드 (레퍼런스 스타일) ── */
+    .player-card{
+      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+      border:1px solid var(--border);border-radius:14px;padding:20px;
+      position:relative;overflow:hidden;
+    }
+    .player-card::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(245,158,11,.05),transparent 60%);pointer-events:none;
+    }
+    /* 등급 배너 */
+    .grade-banner{
+      position:absolute;top:0;left:0;right:0;height:4px;
+    }
+    .grade-고{background:linear-gradient(90deg,#ef4444,#f97316);}
+    .grade-저{background:linear-gradient(90deg,#3b82f6,#6366f1);}
+    .
+
+    .pc-top{display:flex;gap:16px;align-items:flex-start;margin-top:8px;}
+    .pc-photo{width:80px;height:80px;border-radius:10px;object-fit:cover;
+      background:var(--surface2);border:2px solid var(--border);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:2rem;}
+    .pc-info{flex:1;min-width:0;}
+    .pc-grade-badge{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;
+      margin-bottom:6px;
+    }
+    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
+    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
+    .
+    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;line-height:1.1;margin-bottom:8px;}
+    .pc-tiers{display:flex;gap:12px;margin-bottom:8px;}
+    .tier-item{display:flex;flex-direction:column;gap:2px;}
+    .tier-label{font-size:.65rem;color:var(--muted);}
+    .tier-val{font-size:.85rem;font-weight:700;color:var(--text);}
+    .pc-heroes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .hero-tag{background:var(--surface2);border:1px solid var(--border);
+      border-radius:6px;padding:3px 8px;font-size:.75rem;color:var(--text);}
+    .pc-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.78rem;}
+    .pc-meta-item{display:flex;flex-direction:column;gap:2px;}
+    .pc-meta-label{font-size:.65rem;color:var(--muted);}
+    .pc-meta-val{color:var(--text);}
+    .pc-intro{margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.04);
+      border-radius:8px;font-size:.82rem;color:var(--muted);border-left:3px solid var(--accent);}
+
+    /* ── 타이머 섹션 (레퍼런스 스타일) ── */
+    .timer-section{margin-top:16px;}
+    .bid-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .bid-amount{font-family:'Black Han Sans',sans-serif;font-size:1.6rem;color:var(--accent);}
+    .bid-team{font-size:.85rem;color:var(--accent2);}
+
+    /* 타이머 바 (레퍼런스와 동일) */
+    .timer-bar-wrap{width:100%;height:10px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+    .timer-bar{height:100%;border-radius:6px;transition:width .1s linear,background .3s;}
+    .tbar-preview{background:linear-gradient(90deg,var(--preview),#a78bfa);}
+    .tbar-bid{background:linear-gradient(90deg,var(--accent),#f97316);}
+    .tbar-urgent{background:linear-gradient(90deg,var(--danger),#f97316);animation:flicker .4s infinite;}
+    @keyframes flicker{0%,100%{opacity:1}50%{opacity:.7}}
+
+    /* 타이머 하단 행 */
+    .timer-bottom{display:flex;align-items:center;justify-content:space-between;}
+    .phase-badge{display:inline-flex;align-items:center;gap:6px;
+      padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:700;}
+    .pb-preview{background:rgba(129,140,248,.15);color:var(--preview);border:1px solid var(--preview);}
+    .pb-bidding{background:rgba(245,158,11,.15);color:var(--accent);border:1px solid var(--accent);}
+    .pb-bidding .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse-dot .8s infinite;}
+    @keyframes pulse-dot{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+    .timer-countdown{display:flex;align-items:baseline;gap:4px;}
+    .timer-big{font-family:'Black Han Sans',sans-serif;font-size:2.2rem;line-height:1;transition:color .2s;}
+    .timer-sec-label{font-size:.78rem;color:var(--muted);}
+    .t-preview{color:var(--preview);}
+    .t-normal{color:var(--text);}
+    .t-urgent{color:var(--danger);animation:pulse-text .5s infinite;}
+    @keyframes pulse-text{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* NEXT 선수 */
+    .next-section{margin-top:12px;padding:10px 14px;background:var(--surface2);
+      border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:10px;}
+    .next-label{font-size:.75rem;color:var(--danger);font-weight:700;letter-spacing:1px;flex-shrink:0;}
+    .next-grade-badge{padding:2px 7px;border-radius:4px;font-size:.7rem;font-weight:700;flex-shrink:0;}
+    .next-name{font-size:.95rem;font-weight:700;}
+    .next-role{font-size:.75rem;color:var(--muted);margin-left:auto;flex-shrink:0;}
+
+    /* 버튼 */
+    .btn{padding:10px 18px;border:none;border-radius:10px;font-size:.9rem;font-weight:700;
+      font-family:inherit;cursor:pointer;transition:all .2s;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#d97706);color:#0a0e1a;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.4);}
+    .btn-danger{background:var(--danger);color:#fff;}
+    .btn-danger:hover{opacity:.85;}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+    .btn-ghost:hover{border-color:var(--accent2);}
+    .btn:disabled{opacity:.35;pointer-events:none;}
+    .btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+
+    /* 팀 카드 */
+    .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+    .team-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+    .tn{font-weight:700;font-size:.9rem;margin-bottom:4px;}
+    .tp{font-family:'Black Han Sans',sans-serif;font-size:1.3rem;color:var(--accent);}
+    .tp span{font-size:.65rem;color:var(--muted);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;font-weight:400;}
+    .mtag{display:inline-block;background:var(--surface);border:1px solid var(--border);
+      border-radius:4px;padding:2px 5px;font-size:.7rem;color:var(--muted);margin:2px 2px 0 0;}
+
+    /* 큐 */
+    .q-list{display:flex;flex-direction:column;gap:5px;max-height:240px;overflow-y:auto;}
+    .q-list::-webkit-scrollbar{width:3px;}
+    .q-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .qi{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;
+      background:var(--surface2);border:1px solid transparent;}
+    .qi.cur{border-color:var(--accent);background:rgba(245,158,11,.08);}
+    .qi.done{opacity:.3;text-decoration:line-through;}
+    .qi-grade{font-size:.68rem;font-weight:700;flex-shrink:0;}
+    .qi-grade-고{color:#ef4444;} .qi-grade-저{color:#3b82f6;} 
+    .qi-role{font-size:.7rem;color:var(--muted);min-width:32px;}
+    .qi-name{font-size:.88rem;}
+    .qi-team{font-size:.72rem;color:var(--success);margin-left:auto;}
+
+    /* 링크 */
+    .lk{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);
+      border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
+    .lk-label{font-size:.75rem;color:var(--muted);min-width:58px;}
+    .lk-url{font-size:.75rem;color:var(--accent2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);
+      border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;
+      font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;}
+    .toast.show{opacity:1;}
+    #init-screen{text-align:center;padding:28px 0;}
+    #init-screen p{color:var(--muted);font-size:.85rem;margin-bottom:20px;}
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div style="font-size:.7rem;color:var(--muted);letter-spacing:2px;margin-bottom:2px;">RØDE와 함께하는</div>
+    <div class="logo">도현 배 유인원 컵 <span id="room-title" style="font-size:.85rem;color:var(--muted);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;font-weight:400;"></span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span class="room-pill">방 코드: <span id="room-code-disp">-</span></span>
+    <button class="copy-btn" onclick="copyObs()">관전링크 복사</button>
+    <button class="copy-btn" onclick="goAdmin()" style="border-color:var(--accent);color:var(--accent);">⚙ 관리자</button>
+  </div>
+</div>
+
+<!-- 현재 경매 영역 -->
+<div class="card full" style="margin-bottom:14px;">
+  <div class="card-title">현재 경매</div>
+
+  <!-- 시작 전 -->
+  <div id="init-screen">
+    <h3 style="margin-bottom:8px;">경매 준비 완료</h3>
+    <p>시작 버튼을 누르면 첫 번째 선수의 경매가 시작됩니다</p>
+    <button class="btn btn-primary" onclick="startAuction()">🏁 경매 시작</button>
+  </div>
+
+  <!-- 경매 진행 -->
+  <div id="auction-screen" style="display:none;">
+
+    <!-- 선수 카드 -->
+    <div class="player-card" id="player-card">
+      <div class="grade-banner grade-고" id="grade-banner"></div>
+      <div class="pc-top">
+        <div class="pc-photo" id="pc-photo">👤</div>
+        <div class="pc-info">
+          <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어 매물</div>
+          <div class="pc-name" id="pc-name">-</div>
+          <div class="pc-tiers" id="pc-tiers"></div>
+          <div class="pc-heroes" id="pc-heroes"></div>
+          <div class="pc-meta" id="pc-meta"></div>
+        </div>
+      </div>
+      <div class="pc-intro" id="pc-intro" style="display:none;"></div>
+
+      <!-- 타이머 섹션 -->
+      <div class="timer-section">
+        <div class="bid-row">
+          <div>
+            <div class="bid-amount" id="bid-amount">0 pt</div>
+            <div class="bid-team" id="bid-team">입찰자 없음</div>
+          </div>
+        </div>
+        <div class="timer-bar-wrap">
+          <div class="timer-bar tbar-preview" id="timer-bar" style="width:100%"></div>
+        </div>
+        <div class="timer-bottom">
+          <div class="phase-badge pb-preview" id="phase-badge">
+            <span>⏳ 입찰 대기 중</span>
+          </div>
+          <div class="timer-countdown">
+            <div class="timer-big t-preview" id="timer-big">10</div>
+            <div class="timer-sec-label">초</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEXT 선수 -->
+      <div class="next-section" id="next-section" style="display:none;">
+        <span class="next-label">NEXT</span>
+        <span class="next-grade-badge" id="next-grade-badge"></span>
+        <span class="next-name" id="next-name">-</span>
+        <span class="next-role" id="next-role">-</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost"  onclick="skipPlayer()">⏭ 건너뛰기</button>
+      <button class="btn btn-danger" onclick="confirmNobid()">❌ 유찰</button>
+      <button class="btn btn-primary" id="hammer-btn" onclick="hammered()" disabled>🔨 낙찰!</button>
+    </div>
+  </div>
+
+  <!-- 완료 -->
+  <div id="finished-screen" style="display:none;text-align:center;padding:32px 0;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
+    <h3 style="font-size:1.4rem;margin-bottom:8px;">경매 완료!</h3>
+    <p style="color:var(--muted);margin-bottom:24px;">모든 선수 경매가 끝났습니다</p>
+    <button class="btn btn-ghost" onclick="location.href='index.html'">홈으로</button>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card"><div class="card-title">팀 현황</div><div class="team-grid" id="teams-disp"></div></div>
+  <div class="card"><div class="card-title">경매 순서</div><div class="q-list" id="q-list"></div></div>
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <div class="card-title">참가 링크</div>
+  <div id="links-disp"></div>
+  <div class="lk">
+    <span class="lk-label">관전 링크</span>
+    <span class="lk-url" id="obs-link">-</span>
+    <button class="copy-btn" onclick="copyObsEl()">복사</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer style="margin-top:24px;padding-bottom:20px;text-align:center;">
+  <a href="https://www.onsidecompany.co.kr/" target="_blank" rel="noopener"
+    style="color:#334155;font-size:.68rem;text-decoration:none;letter-spacing:.5px;line-height:1.8;">
+    Copyright ⓒ 2026 ONSIDE COMPANY Co., Ltd.<br>All rights reserved.
+  </a>
+</footer>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const ROOM   = params.get('room');
+  if (!ROOM) { alert('방 코드가 없습니다.'); location.href = 'index.html'; }
+
+  const BASE        = location.origin + location.pathname.replace('host.html','');
+  const PREVIEW_SEC = 10;
+  const BID_SEC     = 10;
+
+  let roomData = null, timerInterval = null, transLock = false;
+
+  document.getElementById('room-code-disp').textContent = ROOM;
+
+  window.addEventListener('load', () => {
+    const { ref, onValue } = window._dbFns;
+    onValue(ref(window._db, `rooms/${ROOM}`), snap => {
+      if (!snap.exists()) return;
+      roomData = snap.val();
+      render();
+    });
+  });
+
+  // ── 렌더
+  function render() {
+    if (!roomData) return;
+    document.getElementById('room-title').textContent = roomData.meta.title;
+    const st = roomData.auction.status;
+    document.getElementById('init-screen').style.display     = st==='waiting'  ? '':'none';
+    document.getElementById('auction-screen').style.display  = (st==='preview'||st==='bidding') ? '':'none';
+    document.getElementById('finished-screen').style.display = st==='finished' ? '':'none';
+    if (st==='preview'||st==='bidding') renderAuction();
+    if (st==='finished') stopTimer();
+    renderTeams(); renderQueue(); renderLinks();
+  }
+
+  function renderAuction() {
+    const { auction, players } = roomData;
+    if (!auction.currentPlayer) return;
+    const p = players[auction.currentPlayer];
+    const isPreview = auction.status === 'preview';
+
+    // 선수 카드
+    const grade = p.grade || '중';
+    document.getElementById('grade-banner').className = `grade-banner grade-${grade==='고'?'고':'저'}`;
+
+    const gbMap = { '고':'gb-고 🔴 고티어 매물', '중':'gb-중 🟡 중티어 매물', '하':'gb-하 🔵 하티어 매물' };
+    const gb = document.getElementById('pc-grade-badge');
+    gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
+    gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
+
+    document.getElementById('pc-name').textContent = p.name;
+
+    // 티어 정보
+    document.getElementById('pc-tiers').innerHTML = `
+      <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
+      <div class="tier-item"><div class="tier-label">전 시즌</div><div class="tier-val">${p.prevTier||'-'}</div></div>
+      <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
+    `;
+
+    // 선호 영웅
+    const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
+    document.getElementById('pc-heroes').innerHTML = heroes.map(h=>`<span class="hero-tag">⚔ ${h}</span>`).join('');
+
+    // 메타 정보
+    document.getElementById('pc-meta').innerHTML = `
+      <div class="pc-meta-item"><div class="pc-meta-label">포지션</div><div class="pc-meta-val">${p.role||'-'}</div></div>
+      <div class="pc-meta-item"><div class="pc-meta-label">플레이 스타일</div><div class="pc-meta-val">${p.style||'-'}</div></div>
+    `;
+
+    // 소개
+    const introEl = document.getElementById('pc-intro');
+    if (p.intro) { introEl.textContent = `💬 ${p.intro}`; introEl.style.display=''; }
+    else { introEl.style.display='none'; }
+
+    // 입찰가
+    document.getElementById('bid-amount').textContent = `${auction.currentBid||0} pt`;
+    document.getElementById('bid-team').textContent = auction.currentLeader
+      ? `👑 ${getTeamName(auction.currentLeader)} 입찰 중` : '입찰자 없음';
+
+    // 낙찰 버튼
+    document.getElementById('hammer-btn').disabled = isPreview;
+
+    // 페이즈 배지
+    const pb = document.getElementById('phase-badge');
+    if (isPreview) {
+      pb.className = 'phase-badge pb-preview';
+      pb.innerHTML = '<span>⏳ 입찰 대기 중</span>';
+    } else {
+      pb.className = 'phase-badge pb-bidding';
+      pb.innerHTML = '<span class="dot"></span><span>입찰 중</span>';
+    }
+
+    startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+
+    // NEXT 선수
+    renderNext();
+  }
+
+  function renderNext() {
+    const { auction, players } = roomData;
+    const remaining = (auction.order||[]).filter(pid =>
+      pid !== auction.currentPlayer && players[pid]?.assignedTo == null
+    );
+    const nextEl = document.getElementById('next-section');
+    if (remaining.length === 0) { nextEl.style.display = 'none'; return; }
+    nextEl.style.display = '';
+    const np = players[remaining[0]];
+    const g  = np?.grade || '중';
+    const ngb = document.getElementById('next-grade-badge');
+    ngb.textContent = g==='고'?'🔴 고':g==='중'?'🟡 중':'🔵 하';
+    ngb.className = 'next-grade-badge ' + (g==='고'?'gb-고':'gb-저');
+    document.getElementById('next-name').textContent = np?.name || '-';
+    document.getElementById('next-role').textContent = np?.role || '-';
+  }
+
+  // ── 타이머
+  function startLocalTimer(timerEndsAt, totalSec, isPreview) {
+    stopTimer();
+    timerInterval = setInterval(() => {
+      const remMs  = timerEndsAt - Date.now();
+      const remSec = Math.max(0, remMs / 1000);
+      const pct    = Math.min(100, (remSec / totalSec) * 100);
+      const ceil   = Math.ceil(remSec);
+      const dec    = remSec.toFixed(1);
+
+      const bigEl = document.getElementById('timer-big');
+      const barEl = document.getElementById('timer-bar');
+
+      bigEl.textContent = dec;
+      barEl.style.width = pct + '%';
+
+      if (isPreview) {
+        bigEl.className = 'timer-big t-preview';
+        barEl.className = 'timer-bar tbar-preview';
+      } else if (ceil <= 5) {
+        bigEl.className = 'timer-big t-urgent';
+        barEl.className = 'timer-bar tbar-urgent';
+      } else {
+        bigEl.className = 'timer-big t-normal';
+        barEl.className = 'timer-bar tbar-bid';
+      }
+
+      if (remMs <= 0 && isPreview && !transLock) {
+        transLock = true; stopTimer(); transitionToBidding();
+      }
+      if (remMs <= 0 && !isPreview) stopTimer();
+    }, 50);
+  }
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  async function transitionToBidding() {
+    if (roomData?.auction?.status !== 'preview') { transLock = false; return; }
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status: 'bidding', timerEndsAt: Date.now() + BID_SEC * 1000
+    });
+    transLock = false;
+  }
+
+  // ── 경매 시작
+  async function startAuction() {
+    const { ref, update } = window._dbFns;
+    const first = roomData.auction.order[0];
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status:'preview', currentPlayer:first, currentBid:0,
+      currentLeader:null, timerEndsAt: Date.now() + PREVIEW_SEC * 1000
+    });
+  }
+
+  // ── 낙찰
+  async function hammered() {
+    const { ref, update } = window._dbFns;
+    const { auction, teams } = roomData;
+    if (!auction.currentLeader) { showToast('입찰자가 없습니다'); return; }
+    const tk  = auction.currentLeader, pid = auction.currentPlayer, bid = auction.currentBid;
+    const upd = {};
+    upd[`rooms/${ROOM}/teams/${tk}/members`]   = [...(teams[tk].members||[]), pid];
+    upd[`rooms/${ROOM}/teams/${tk}/points`]    = teams[tk].points - bid;
+    upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = tk;
+    await nextPlayer(upd);
+    showToast(`🔨 ${getTeamName(tk)} 낙찰! (-${bid}pt)`);
+  }
+
+  // ── 유찰
+  async function confirmNobid() {
+    if (!confirm('유찰 처리하시겠습니까?')) return;
+    await nextPlayer({}); showToast('유찰 처리됨');
+  }
+
+  // ── 건너뛰기
+  async function skipPlayer() {
+    const { ref, update } = window._dbFns;
+    const { auction } = roomData;
+    const order = [...auction.order];
+    const idx = order.indexOf(auction.currentPlayer);
+    if (idx !== -1) { order.splice(idx,1); order.push(auction.currentPlayer); }
+    const nextPid = order.find(pid => roomData.players[pid]?.assignedTo == null) || order[0];
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      order, status:'preview', currentPlayer:nextPid,
+      currentBid:0, currentLeader:null, timerEndsAt: Date.now() + PREVIEW_SEC * 1000
+    });
+    showToast('건너뛰었습니다');
+  }
+
+  // ── 다음 선수
+  async function nextPlayer(extra={}) {
+    const { ref, update } = window._dbFns;
+    const { auction } = roomData;
+    const rem = auction.order.filter(pid => pid!==auction.currentPlayer && roomData.players[pid]?.assignedTo==null);
+    const upd = {...extra};
+    if (rem.length === 0) {
+      upd[`rooms/${ROOM}/auction/status`] = 'finished';
+      upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
+    } else {
+      upd[`rooms/${ROOM}/auction/status`]        = 'preview';
+      upd[`rooms/${ROOM}/auction/currentPlayer`] = rem[0];
+      upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+      upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+      upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
+    }
+    await update(ref(window._db), upd);
+  }
+
+  function renderTeams() {
+    const { teams, players } = roomData;
+    document.getElementById('teams-disp').innerHTML = Object.entries(teams).map(([k,t]) => {
+      const members = (t.members||[]).map(pid => players[pid] ? `<span class="mtag">${players[pid].name}</span>` : '').join('');
+      return `<div class="team-card">
+        <div class="tn">${t.name}</div>
+        <div class="tp">${t.points}<span>pt</span></div>
+        <div style="margin-top:5px;">${members||'<span style="color:var(--muted);font-size:.7rem;">대기 중</span>'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderQueue() {
+    const { auction, players } = roomData;
+    document.getElementById('q-list').innerHTML = (auction.order||[]).map(pid => {
+      const p = players[pid];
+      const isCur  = pid===auction.currentPlayer;
+      const isDone = p?.assignedTo!=null;
+      const g = p?.grade||'고';
+      const assigned = isDone ? `→ ${getTeamName(p.assignedTo)}` : '';
+      return `<div class="qi${isCur?' cur':isDone?' done':''}">
+        <span class="qi-grade qi-grade-${g==='고'?'고':'저'}">${g==='고'?'🔴':'🔵'}</span>
+        <span class="qi-role">${p?.role||''}</span>
+        <span class="qi-name">${p?.name||pid}</span>
+        <span class="qi-team">${assigned}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderLinks() {
+    const { teams } = roomData;
+    document.getElementById('links-disp').innerHTML = Object.entries(teams).map(([k,t]) => {
+      const url = `${BASE}auction.html?room=${ROOM}&team=${k}&token=${t.leaderToken}`;
+      return `<div class="lk">
+        <span class="lk-label">${t.name}</span>
+        <span class="lk-url">${url}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('복사됨!'))">복사</button>
+      </div>`;
+    }).join('');
+    document.getElementById('obs-link').textContent = `${BASE}auction.html?room=${ROOM}&role=observer`;
+  }
+
+  function getTeamName(k) { return roomData?.teams?.[k]?.name||k; }
+  function copyObs() { navigator.clipboard.writeText(`${BASE}auction.html?room=${ROOM}&role=observer`).then(()=>showToast('복사됨!')); }
+  function copyObsEl() { navigator.clipboard.writeText(document.getElementById('obs-link').textContent).then(()=>showToast('복사됨!')); }
+  function goAdmin() { window.open(`admin.html?room=${ROOM}`, '_blank'); }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+</script>
+</body>
+</html>

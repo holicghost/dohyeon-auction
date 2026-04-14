@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OW 경매 참가</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    // ✅ Firebase 설정 붙여넣기
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6",
+      measurementId: "G-SKKD38LT76"
+    };
+    const app = initializeApp(firebaseConfig);
+    window._db = getDatabase(app);
+    window._dbFns = { ref, onValue, update, get };
+  </script>
+  <style>
+    :root{
+      --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
+      --accent:#f59e0b;--accent2:#3b82f6;--text:#e2e8f0;--muted:#64748b;
+      --danger:#ef4444;--success:#22c55e;--preview:#818cf8;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;
+      min-height:100vh;padding:16px;
+      background-image:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,.06) 0%,transparent 60%),
+                       radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.06) 0%,transparent 60%);}
+    .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+    .logo{font-family:'Pretendard',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:-0.02em;color:#f59e0b;}
+    .badge-team{background:rgba(59,130,246,.15);border:1px solid var(--accent2);border-radius:20px;
+      padding:5px 14px;font-size:.82rem;color:var(--accent2);font-weight:700;}
+    .badge-obs{background:var(--surface2);border:1px solid var(--border);border-radius:20px;
+      padding:5px 14px;font-size:.82rem;color:var(--muted);}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
+    .card-title{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+
+    /* ── 선수 카드 ── */
+    .player-card{
+      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+      border:1px solid var(--border);border-radius:14px;padding:18px;
+      position:relative;overflow:hidden;margin-bottom:14px;
+    }
+    .player-card::before{content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(245,158,11,.05),transparent 60%);pointer-events:none;}
+    .grade-banner{position:absolute;top:0;left:0;right:0;height:4px;}
+    .grade-고{background:linear-gradient(90deg,#ef4444,#f97316);}
+    .grade-저{background:linear-gradient(90deg,#3b82f6,#6366f1);}
+    .
+
+    .pc-top{display:flex;gap:14px;align-items:flex-start;margin-top:6px;}
+    .pc-photo{width:72px;height:72px;border-radius:10px;background:var(--surface2);
+      border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;
+      justify-content:center;font-size:1.8rem;}
+    .pc-info{flex:1;min-width:0;}
+    .pc-grade-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+      border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:5px;}
+    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
+    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
+    .
+    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:1.7rem;line-height:1.1;margin-bottom:7px;}
+    .pc-tiers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;}
+    .tier-item{display:flex;flex-direction:column;gap:2px;}
+    .tier-label{font-size:.62rem;color:var(--muted);}
+    .tier-val{font-size:.82rem;font-weight:700;}
+    .pc-heroes{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;}
+    .hero-tag{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+      padding:3px 8px;font-size:.72rem;color:var(--text);}
+    .pc-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:.75rem;margin-bottom:5px;}
+    .pc-meta-label{font-size:.62rem;color:var(--muted);display:block;}
+    .pc-intro{padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px;
+      font-size:.8rem;color:var(--muted);border-left:3px solid var(--accent);}
+
+    /* ── 타이머 + 입찰 ── */
+    .timer-bid-section{margin-top:14px;}
+    .bid-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;}
+    .bid-amount{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;color:var(--accent);}
+    .bid-team{font-size:.82rem;color:var(--accent2);margin-top:2px;}
+
+    /* 타이머 바 */
+    .timer-bar-wrap{width:100%;height:10px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+    .timer-bar{height:100%;border-radius:6px;transition:width .05s linear,background .3s;}
+    .tbar-preview{background:linear-gradient(90deg,var(--preview),#a78bfa);}
+    .tbar-bid{background:linear-gradient(90deg,var(--accent),#f97316);}
+    .tbar-urgent{background:linear-gradient(90deg,var(--danger),#f97316);animation:flicker .4s infinite;}
+    @keyframes flicker{0%,100%{opacity:1}50%{opacity:.7}}
+
+    /* 하단 행: 배지 + 카운트다운 */
+    .timer-bottom{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .phase-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+      border-radius:20px;font-size:.8rem;font-weight:700;}
+    .pb-preview{background:rgba(129,140,248,.15);color:var(--preview);border:1px solid var(--preview);}
+    .pb-bidding{background:rgba(245,158,11,.15);color:var(--accent);border:1px solid var(--accent);}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pdot .8s infinite;}
+    @keyframes pdot{0%,100%{transform:scale(1)}50%{transform:scale(1.6)}}
+    .timer-countdown{display:flex;align-items:baseline;gap:4px;}
+    .timer-big{font-family:'Black Han Sans',sans-serif;font-size:2.4rem;line-height:1;transition:color .2s;}
+    .timer-sec-label{font-size:.75rem;color:var(--muted);}
+    .t-preview{color:var(--preview);}
+    .t-normal{color:var(--text);}
+    .t-urgent{color:var(--danger);animation:pt .5s infinite;}
+    @keyframes pt{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* 잠금 오버레이 */
+    .bid-locked{padding:12px;background:rgba(129,140,248,.08);border:1px solid var(--preview);
+      border-radius:10px;color:var(--preview);font-size:.88rem;text-align:center;}
+
+    /* 입찰 프리셋 */
+    .my-pts{font-size:.82rem;color:var(--muted);margin-bottom:10px;text-align:center;}
+    .my-pts span{color:var(--accent);font-weight:700;font-size:1.05rem;}
+    .bid-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px;}
+    .bid-btn{padding:11px 0;border:1px solid var(--border);border-radius:8px;background:var(--surface2);
+      color:var(--text);font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;
+      transition:all .2s;text-align:center;}
+    .bid-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);background:rgba(245,158,11,.08);}
+    .bid-btn:disabled{opacity:.3;cursor:not-allowed;}
+    .custom-bid{display:flex;gap:8px;}
+    .custom-bid input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      color:var(--text);padding:10px 12px;font-size:.9rem;font-family:inherit;outline:none;}
+    .custom-bid input:focus{border-color:var(--accent2);}
+    .btn-bid{padding:10px 18px;background:linear-gradient(135deg,var(--accent),#d97706);border:none;
+      border-radius:8px;color:#0a0e1a;font-weight:700;font-family:inherit;font-size:.9rem;
+      cursor:pointer;transition:all .2s;white-space:nowrap;}
+    .btn-bid:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.4);}
+    .btn-bid:disabled{opacity:.3;cursor:not-allowed;}
+
+    /* NEXT */
+    .next-section{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
+      border-radius:10px;display:flex;align-items:center;gap:10px;margin-top:12px;}
+    .next-label{font-size:.75rem;color:var(--danger);font-weight:700;letter-spacing:1px;flex-shrink:0;}
+    .next-grade-badge{padding:2px 7px;border-radius:4px;font-size:.7rem;font-weight:700;flex-shrink:0;}
+    .next-name{font-size:.9rem;font-weight:700;}
+    .next-role{font-size:.72rem;color:var(--muted);margin-left:auto;flex-shrink:0;}
+
+    /* 팀 현황 */
+    .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;}
+    .team-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+    .team-card.mine{border-color:var(--accent2);}
+    .team-card.leading{border-color:var(--accent);box-shadow:0 0 10px rgba(245,158,11,.2);}
+    .tn{font-weight:700;font-size:.88rem;margin-bottom:3px;}
+    .tp{font-family:'Black Han Sans',sans-serif;font-size:1.25rem;color:var(--accent);}
+    .tp span{font-size:.62rem;color:var(--muted);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;font-weight:400;}
+    .mtag{display:inline-block;background:var(--surface);border:1px solid var(--border);
+      border-radius:4px;padding:2px 5px;font-size:.68rem;color:var(--muted);margin:2px 2px 0 0;}
+
+    /* 큐 */
+    .q-list{display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;}
+    .q-list::-webkit-scrollbar{width:3px;}
+    .q-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .qi{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;
+      background:var(--surface2);border:1px solid transparent;}
+    .qi.cur{border-color:var(--accent);background:rgba(245,158,11,.08);}
+    .qi.done{opacity:.3;text-decoration:line-through;}
+    .qi-grade{font-size:.68rem;font-weight:700;flex-shrink:0;}
+    .qi-grade-고{color:#ef4444;} .qi-grade-저{color:#3b82f6;} 
+    .qi-role{font-size:.68rem;color:var(--muted);min-width:30px;}
+    .qi-name{font-size:.85rem;}
+    .qi-team{font-size:.7rem;color:var(--success);margin-left:auto;}
+
+    .center-screen{text-align:center;padding:40px 20px;}
+    .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface2);
+      border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;
+      font-size:.86rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;}
+    .toast.show{opacity:1;}
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;margin-bottom:1px;">RØDE와 함께하는</div>
+    <div class="logo">도현 배 유인원 컵</div>
+  </div>
+  <div id="role-badge"></div>
+</div>
+
+<!-- 대기 -->
+<div id="waiting-screen" class="card">
+  <div class="center-screen">
+    <div style="font-size:2.5rem;margin-bottom:12px;">⏳</div>
+    <h3 style="margin-bottom:8px;">경매 시작 대기 중</h3>
+    <p style="color:var(--muted);">주최자가 경매를 시작하면 자동으로 시작됩니다</p>
+  </div>
+</div>
+
+<!-- 경매 진행 -->
+<div id="auction-screen" style="display:none;">
+
+  <!-- 선수 카드 -->
+  <div class="player-card" id="player-card">
+    <div class="grade-banner grade-중" id="grade-banner"></div>
+    <div class="pc-top">
+      <div class="pc-photo" id="pc-photo">👤</div>
+      <div class="pc-info">
+        <div class="pc-grade-badge gb-중" id="pc-grade-badge">🟡 중티어 매물</div>
+        <div class="pc-name" id="pc-name">-</div>
+        <div class="pc-tiers" id="pc-tiers"></div>
+        <div class="pc-heroes" id="pc-heroes"></div>
+        <div class="pc-meta" id="pc-meta"></div>
+      </div>
+    </div>
+    <div class="pc-intro" id="pc-intro" style="display:none;"></div>
+
+    <!-- 타이머 + 입찰 -->
+    <div class="timer-bid-section">
+      <div class="bid-row">
+        <div>
+          <div class="bid-amount" id="bid-amount">0 pt</div>
+          <div class="bid-team" id="bid-team">입찰자 없음</div>
+        </div>
+      </div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar tbar-preview" id="timer-bar" style="width:100%"></div>
+      </div>
+      <div class="timer-bottom">
+        <div class="phase-badge pb-preview" id="phase-badge"><span>⏳ 입찰 대기 중</span></div>
+        <div class="timer-countdown">
+          <div class="timer-big t-preview" id="timer-big">10</div>
+          <div class="timer-sec-label">초</div>
+        </div>
+      </div>
+
+      <!-- 잠금 -->
+      <div class="bid-locked" id="bid-locked">🔒 잠시 후 입찰이 시작됩니다…</div>
+
+      <!-- 입찰 영역 -->
+      <div id="bid-section" style="display:none;">
+        <div class="my-pts">내 포인트: <span id="my-pts-val">-</span></div>
+        <div class="bid-presets" id="bid-presets"></div>
+        <div class="custom-bid">
+          <input type="number" id="custom-amt" placeholder="직접 입력" min="10" step="10" />
+          <button class="btn-bid" onclick="placeBid(null)">입찰</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEXT -->
+    <div class="next-section" id="next-section" style="display:none;">
+      <span class="next-label">NEXT</span>
+      <span class="next-grade-badge" id="next-grade-badge"></span>
+      <span class="next-name" id="next-name">-</span>
+      <span class="next-role" id="next-role">-</span>
+    </div>
+  </div>
+
+  <!-- 팀 현황 -->
+  <div class="card">
+    <div class="card-title">팀 현황</div>
+    <div class="team-grid" id="teams-disp"></div>
+  </div>
+
+  <!-- 큐 -->
+  <div class="card">
+    <div class="card-title">경매 순서</div>
+    <div class="q-list" id="q-list"></div>
+  </div>
+</div>
+
+<!-- 완료 -->
+<div id="finished-screen" class="card" style="display:none;">
+  <div class="center-screen">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
+    <h3 style="margin-bottom:8px;">경매 완료!</h3>
+    <p style="color:var(--muted);margin-bottom:18px;">최종 팀 구성</p>
+    <div class="team-grid" id="final-teams" style="text-align:left;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer style="margin-top:24px;padding-bottom:20px;text-align:center;">
+  <a href="https://www.onsidecompany.co.kr/" target="_blank" rel="noopener"
+    style="color:#334155;font-size:.68rem;text-decoration:none;letter-spacing:.5px;line-height:1.8;">
+    Copyright ⓒ 2026 ONSIDE COMPANY Co., Ltd.<br>All rights reserved.
+  </a>
+</footer>
+
+<script>
+  const params   = new URLSearchParams(location.search);
+  const ROOM     = params.get('room');
+  const TEAM_KEY = params.get('team');
+  const TOKEN    = params.get('token');
+  const ROLE     = params.get('role');
+  const IS_LEADER   = !!TEAM_KEY && !!TOKEN;
+  const IS_OBSERVER = ROLE === 'observer';
+  const PREVIEW_SEC = 10;
+  const BID_SEC     = 10;
+  const BID_ADD_SEC = 5;
+
+  if (!ROOM) { alert('잘못된 접근입니다.'); location.href = 'index.html'; }
+
+  let roomData = null, timerInterval = null;
+
+  if (IS_OBSERVER) document.getElementById('role-badge').innerHTML = `<span class="badge-obs">👁 관전 중</span>`;
+
+  window.addEventListener('load', () => {
+    const { ref, onValue, get } = window._dbFns;
+    if (IS_LEADER) {
+      get(ref(window._db, `rooms/${ROOM}/teams/${TEAM_KEY}/leaderToken`)).then(snap => {
+        if (!snap.exists() || snap.val() !== TOKEN) { alert('유효하지 않은 링크입니다.'); location.href='index.html'; }
+      });
+    }
+    onValue(ref(window._db, `rooms/${ROOM}`), snap => {
+      if (!snap.exists()) return;
+      roomData = snap.val();
+      render();
+    });
+  });
+
+  function render() {
+    if (!roomData) return;
+    const { teams, auction } = roomData;
+    const st = auction.status;
+
+    if (IS_LEADER && teams[TEAM_KEY])
+      document.getElementById('role-badge').innerHTML = `<span class="badge-team">🏅 ${teams[TEAM_KEY].name} 팀장</span>`;
+
+    document.getElementById('waiting-screen').style.display  = st==='waiting'  ? '':'none';
+    document.getElementById('auction-screen').style.display  = (st==='preview'||st==='bidding') ? '':'none';
+    document.getElementById('finished-screen').style.display = st==='finished' ? '':'none';
+
+    if (st==='preview'||st==='bidding') { renderAuction(); renderTeams(); renderQueue(); }
+    if (st==='finished') { stopTimer(); renderFinal(); }
+  }
+
+  function renderAuction() {
+    const { auction, players, teams, meta } = roomData;
+    if (!auction.currentPlayer) return;
+    const p = players[auction.currentPlayer];
+    const isPreview = auction.status === 'preview';
+    const grade = p.grade || '중';
+
+    // 등급 배너
+    document.getElementById('grade-banner').className = `grade-banner grade-${grade==='고'?'고':'저'}`;
+    const gb = document.getElementById('pc-grade-badge');
+    gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
+    gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
+
+    document.getElementById('pc-name').textContent = p.name;
+
+    // 티어
+    document.getElementById('pc-tiers').innerHTML = `
+      <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
+      <div class="tier-item"><div class="tier-label">전 시즌</div><div class="tier-val">${p.prevTier||'-'}</div></div>
+      <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
+    `;
+
+    // 영웅
+    const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
+    document.getElementById('pc-heroes').innerHTML = heroes.map(h=>`<span class="hero-tag">⚔ ${h}</span>`).join('');
+
+    // 메타
+    document.getElementById('pc-meta').innerHTML = `
+      <div><span class="pc-meta-label">포지션</span>${p.role||'-'}</div>
+      <div><span class="pc-meta-label">플레이 스타일</span>${p.style||'-'}</div>
+    `;
+
+    // 소개
+    const introEl = document.getElementById('pc-intro');
+    if (p.intro) { introEl.textContent = `💬 ${p.intro}`; introEl.style.display=''; }
+    else introEl.style.display='none';
+
+    // 입찰가
+    document.getElementById('bid-amount').textContent = `${auction.currentBid||0} pt`;
+    document.getElementById('bid-team').textContent = auction.currentLeader
+      ? `👑 ${teams[auction.currentLeader]?.name} 입찰 중` : '입찰자 없음';
+
+    // 페이즈 배지
+    const pb = document.getElementById('phase-badge');
+    const lockedEl  = document.getElementById('bid-locked');
+    const bidSec    = document.getElementById('bid-section');
+
+    if (isPreview) {
+      pb.className = 'phase-badge pb-preview';
+      pb.innerHTML = '<span>⏳ 입찰 대기 중</span>';
+      lockedEl.style.display = '';
+      bidSec.style.display   = 'none';
+    } else {
+      pb.className = 'phase-badge pb-bidding';
+      pb.innerHTML = '<span class="dot"></span><span>입찰 중</span>';
+      lockedEl.style.display = 'none';
+      if (IS_LEADER) {
+        bidSec.style.display = '';
+        const myPts  = teams[TEAM_KEY]?.points || 0;
+        const curBid = auction.currentBid || 0;
+        const minBid = meta.minBid || 10;
+        document.getElementById('my-pts-val').textContent = `${myPts}pt`;
+        const presets = [
+          { l:`+${minBid}`,    v: curBid + minBid },
+          { l:`+${minBid*2}`,  v: curBid + minBid*2 },
+          { l:`+${minBid*5}`,  v: curBid + minBid*5 },
+          { l:`최대`,          v: myPts }
+        ];
+        document.getElementById('bid-presets').innerHTML = presets.map(pr => {
+          const dis = (pr.v > myPts || pr.v <= curBid) ? 'disabled' : '';
+          return `<button class="bid-btn" ${dis} onclick="placeBid(${pr.v})">${pr.l}<br><span style="font-size:.68rem;font-weight:400;">${pr.v}pt</span></button>`;
+        }).join('');
+      } else {
+        bidSec.style.display = 'none';
+      }
+    }
+
+    startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+    renderNext();
+  }
+
+  function renderNext() {
+    const { auction, players } = roomData;
+    const rem = (auction.order||[]).filter(pid =>
+      pid !== auction.currentPlayer && players[pid]?.assignedTo == null
+    );
+    const ns = document.getElementById('next-section');
+    if (rem.length === 0) { ns.style.display='none'; return; }
+    ns.style.display = '';
+    const np = players[rem[0]];
+    const g  = np?.grade||'중';
+    const ngb = document.getElementById('next-grade-badge');
+    ngb.textContent  = g==='고'?'🔴 고':'🔵 저';
+    ngb.className    = 'next-grade-badge ' + (g==='고'?'gb-고':'gb-저');
+    document.getElementById('next-name').textContent = np?.name||'-';
+    document.getElementById('next-role').textContent = np?.role||'-';
+  }
+
+  // ── 타이머
+  function startLocalTimer(timerEndsAt, totalSec, isPreview) {
+    stopTimer();
+    timerInterval = setInterval(() => {
+      const remMs  = timerEndsAt - Date.now();
+      const remSec = Math.max(0, remMs / 1000);
+      const pct    = Math.min(100, (remSec / totalSec) * 100);
+      const dec    = remSec.toFixed(1);
+      const ceil   = Math.ceil(remSec);
+
+      const bigEl = document.getElementById('timer-big');
+      const barEl = document.getElementById('timer-bar');
+      if (!bigEl) return;
+
+      bigEl.textContent = dec;
+      barEl.style.width = pct + '%';
+
+      if (isPreview) {
+        bigEl.className = 'timer-big t-preview';
+        barEl.className = 'timer-bar tbar-preview';
+      } else if (ceil <= 5) {
+        bigEl.className = 'timer-big t-urgent';
+        barEl.className = 'timer-bar tbar-urgent';
+      } else {
+        bigEl.className = 'timer-big t-normal';
+        barEl.className = 'timer-bar tbar-bid';
+      }
+      if (remMs <= 0) stopTimer();
+    }, 50);
+  }
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  // ── 입찰
+  async function placeBid(amount) {
+    const { ref, update } = window._dbFns;
+    const { auction, teams, meta } = roomData;
+    if (auction.status !== 'bidding') { showToast('아직 입찰할 수 없습니다'); return; }
+
+    let amt = amount ?? parseInt(document.getElementById('custom-amt').value);
+    if (isNaN(amt)) { showToast('금액을 입력해주세요'); return; }
+
+    const curBid = auction.currentBid || 0;
+    const myPts  = teams[TEAM_KEY]?.points || 0;
+    const minBid = meta.minBid || 10;
+
+    if (amt > myPts)                              { showToast('포인트가 부족합니다'); return; }
+    if (amt <= curBid)                             { showToast(`${curBid}pt보다 높아야 합니다`); return; }
+    if ((amt - curBid) < minBid && amt !== myPts)  { showToast(`최소 ${minBid}pt 이상 올려야 합니다`); return; }
+
+    // 입찰 시 +5초 (최대 BID_SEC 초과 불가)
+    const remaining   = Math.max(0, auction.timerEndsAt - Date.now());
+    const newEnd      = Math.min(
+      Date.now() + remaining + BID_ADD_SEC * 1000,
+      Date.now() + BID_SEC * 1000
+    );
+
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      currentBid: amt, currentLeader: TEAM_KEY, timerEndsAt: newEnd
+    });
+
+    showToast(`✅ ${amt}pt 입찰! (+${BID_ADD_SEC}초)`);
+    document.getElementById('custom-amt').value = '';
+  }
+
+  function renderTeams() {
+    const { teams, players, auction } = roomData;
+    document.getElementById('teams-disp').innerHTML = Object.entries(teams).map(([k,t]) => {
+      const isMine    = k===TEAM_KEY;
+      const isLeading = k===auction.currentLeader;
+      const members   = (t.members||[]).map(pid => players[pid]?`<span class="mtag">${players[pid].name}</span>`:'').join('');
+      return `<div class="team-card${isMine?' mine':''}${isLeading?' leading':''}">
+        <div class="tn">${t.name}${isMine?' 👑':''}</div>
+        <div class="tp">${t.points}<span>pt</span></div>
+        <div style="margin-top:4px;">${members||'<span style="color:var(--muted);font-size:.68rem;">대기 중</span>'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderQueue() {
+    const { auction, players, teams } = roomData;
+    document.getElementById('q-list').innerHTML = (auction.order||[]).map(pid => {
+      const p = players[pid];
+      const isCur  = pid===auction.currentPlayer;
+      const isDone = p?.assignedTo!=null;
+      const g = p?.grade||'고';
+      return `<div class="qi${isCur?' cur':isDone?' done':''}">
+        <span class="qi-grade qi-grade-${g==='고'?'고':'저'}">${g==='고'?'🔴':'🔵'}</span>
+        <span class="qi-role">${p?.role||''}</span>
+        <span class="qi-name">${p?.name||pid}</span>
+        <span class="qi-team">${isDone?`→ ${teams[p.assignedTo]?.name||''}`:''}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderFinal() {
+    const { teams, players } = roomData;
+    document.getElementById('final-teams').innerHTML = Object.entries(teams).map(([k,t]) => {
+      const members = (t.members||[]).map(pid => {
+        const p = players[pid];
+        return p?`<span class="mtag">${p.name}(${p.role})</span>`:'';
+      }).join('');
+      return `<div class="team-card" style="margin-bottom:8px;">
+        <div class="tn">${t.name}</div>
+        <div class="tp">${t.points}<span>pt 잔여</span></div>
+        <div style="margin-top:5px;">${members||'없음'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+</script>
+</body>
+</html>
