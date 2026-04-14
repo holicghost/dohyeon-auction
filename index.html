@@ -244,7 +244,7 @@
   ];
   const STYLES = ['공격적 진입','안정적 서포트','한타 집중','포킹/라인전','유틸리티','플렉스 올라운더'];
 
-const OW_HEROES = {
+  const OW_HEROES = {
     // 탱커
     '디바':        'd.va',
     '라마트라':    'ramattra',
@@ -655,6 +655,8 @@ const OW_HEROES = {
     showToast(`✅ 방 ${code} 삭제됨`);
     loadRooms();
   }
+
+  function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2800);
