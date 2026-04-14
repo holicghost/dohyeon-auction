@@ -125,8 +125,17 @@
     .t-urgent{color:var(--danger);animation:pulse-text .5s infinite;}
     @keyframes pulse-text{0%,100%{opacity:1}50%{opacity:.4}}
 
-    /* NEXT 선수 */
-    .next-section{margin-top:12px;padding:10px 14px;background:var(--surface2);
+    /* 영웅 아이콘 */
+    .hero-icon-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .hero-icon{width:48px;height:48px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
+      background:var(--surface2);flex-shrink:0;position:relative;}
+    .hero-icon img{width:100%;height:100%;object-fit:cover;}
+    .hero-icon-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);
+      font-size:.5rem;text-align:center;padding:1px 2px;color:#fff;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;}
+    .hero-tag{background:var(--surface2);border:1px solid var(--border);
+      border-radius:6px;padding:3px 8px;font-size:.75rem;color:var(--text);}
+
       border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:10px;}
     .next-label{font-size:.75rem;color:var(--danger);font-weight:700;letter-spacing:1px;flex-shrink:0;}
     .next-grade-badge{padding:2px 7px;border-radius:4px;font-size:.7rem;font-weight:700;flex-shrink:0;}
@@ -145,14 +154,41 @@
     .btn:disabled{opacity:.35;pointer-events:none;}
     .btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 
-    /* 팀 카드 */
-    .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
-    .team-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;}
-    .tn{font-weight:700;font-size:.9rem;margin-bottom:4px;}
-    .tp{font-family:'Black Han Sans',sans-serif;font-size:1.3rem;color:var(--accent);}
-    .tp span{font-size:.65rem;color:var(--muted);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;font-weight:400;}
-    .mtag{display:inline-block;background:var(--surface);border:1px solid var(--border);
-      border-radius:4px;padding:2px 5px;font-size:.7rem;color:var(--muted);margin:2px 2px 0 0;}
+    /* 팀 카드 - 이미지 스타일 */
+    .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+    .team-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+    .team-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+    .team-leader-photo{width:44px;height:44px;border-radius:8px;object-fit:cover;
+      background:var(--surface);border:2px solid var(--border);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;}
+    .team-leader-photo img{width:100%;height:100%;object-fit:cover;}
+    .team-leader-info{flex:1;min-width:0;}
+    .tn{font-weight:700;font-size:.95rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .tp{font-family:'Black Han Sans',sans-serif;font-size:1.2rem;color:var(--accent);}
+    .tp span{font-size:.62rem;color:var(--muted);font-family:'Pretendard',sans-serif;letter-spacing:-0.03em;font-weight:400;}
+    .team-members-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+    .member-slot{background:var(--surface);border:1px dashed var(--border);border-radius:6px;
+      padding:5px;text-align:center;min-height:44px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:2px;font-size:.68rem;}
+    .member-slot.filled{border-style:solid;border-color:var(--border);}
+    .member-slot-photo{width:28px;height:28px;border-radius:4px;object-fit:cover;
+      background:var(--surface2);display:flex;align-items:center;justify-content:center;
+      font-size:.8rem;overflow:hidden;flex-shrink:0;}
+    .member-slot-photo img{width:100%;height:100%;object-fit:cover;}
+    .member-slot-name{font-size:.65rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;}
+    .member-slot-role{font-size:.58rem;color:var(--muted);}
+    .member-slot-num{font-size:.8rem;color:var(--border);font-weight:700;}
+
+    /* 낙찰 로그 */
+    .log-wrap{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+    .log-wrap::-webkit-scrollbar{width:3px;}
+    .log-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .log-item{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface2);
+      border-radius:6px;font-size:.78rem;}
+    .log-team{color:var(--accent2);font-weight:700;min-width:56px;}
+    .log-player{color:var(--text);flex:1;}
+    .log-role{font-size:.65rem;color:var(--muted);}
+    .log-price{color:var(--accent);font-weight:700;font-family:'Black Han Sans',sans-serif;}
 
     /* 큐 */
     .q-list{display:flex;flex-direction:column;gap:5px;max-height:240px;overflow-y:auto;}
@@ -273,8 +309,11 @@
 </div>
 
 <div class="grid2">
-  <div class="card"><div class="card-title">팀 현황</div><div class="team-grid" id="teams-disp"></div></div>
+  <div class="card full"><div class="card-title">팀 현황</div><div class="team-grid" id="teams-disp"></div></div>
+</div>
+<div class="grid2" style="margin-top:14px;">
   <div class="card"><div class="card-title">경매 순서</div><div class="q-list" id="q-list"></div></div>
+  <div class="card"><div class="card-title">낙찰 로그</div><div class="log-wrap" id="log-wrap"></div></div>
 </div>
 
 <div class="card" style="margin-top:14px;">
@@ -296,6 +335,30 @@
 </footer>
 
 <script>
+  const OW_HEROES = {
+    '디바':'d.va','라마트라':'ramattra','라인하르트':'reinhardt','로드호그':'roadhog',
+    '마우가':'mauga','시그마':'sigma','오리사':'orisa','윈스턴':'winston','자리야':'zarya',
+    '정커퀸':'junker-queen','해머':'wrecking-ball','겐지':'genji','맥크리':'cassidy',
+    '미스포춘':'misc-fortune','바스티온':'bastion','솔저76':'soldier-76','소전':'sojourn',
+    '시메트라':'symmetra','에코':'echo','위도우메이커':'widowmaker','정커랫':'junkrat',
+    '파라':'pharah','한조':'hanzo','애쉬':'ashe','리퍼':'reaper','트레이서':'tracer',
+    '벤처':'venture','하자드':'hazard','아나':'ana','루시우':'lucio','메르시':'mercy',
+    '모이라':'moira','바티스트':'baptiste','브리기테':'brigitte','일라리':'illari',
+    '젠야타':'zenyatta','키리코':'kiriko','라이프위버':'lifeweaver','주노':'juno',
+  };
+  function heroImgUrl(name) {
+    const k = OW_HEROES[name];
+    return k ? `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png` : '';
+  }
+  function renderHeroes(heroes) {
+    return heroes.filter(Boolean).map(h => {
+      const url = heroImgUrl(h);
+      return url
+        ? `<div class="hero-icon"><img src="${url}" onerror="this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'" /><div class="hero-icon-name">${h}</div></div>`
+        : `<span class="hero-tag">⚔ ${h}</span>`;
+    }).join('');
+  }
+
   const params = new URLSearchParams(location.search);
   const ROOM   = params.get('room');
   if (!ROOM) { alert('방 코드가 없습니다.'); location.href = 'index.html'; }
@@ -354,9 +417,10 @@
       <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
     `;
 
-    // 선호 영웅
+    // 선호 영웅 — 이미지로 표시
     const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
-    document.getElementById('pc-heroes').innerHTML = heroes.map(h=>`<span class="hero-tag">⚔ ${h}</span>`).join('');
+    document.getElementById('pc-heroes').className = 'hero-icon-wrap';
+    document.getElementById('pc-heroes').innerHTML = renderHeroes(heroes);
 
     // 메타 정보
     document.getElementById('pc-meta').innerHTML = `
@@ -440,10 +504,38 @@
       if (remMs <= 0 && isPreview && !transLock) {
         transLock = true; stopTimer(); transitionToBidding();
       }
-      if (remMs <= 0 && !isPreview) stopTimer();
+      // ✅ 경매 시간 종료 → 자동 낙찰 or 자동 유찰
+      if (remMs <= 0 && !isPreview && !transLock) {
+        transLock = true; stopTimer(); autoSettle();
+      }
     }, 50);
   }
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  // ── 자동 낙찰 / 자동 유찰
+  async function autoSettle() {
+    if (roomData?.auction?.status !== 'bidding') { transLock = false; return; }
+    const { auction, teams } = roomData;
+
+    if (auction.currentLeader) {
+      const tk  = auction.currentLeader;
+      const pid = auction.currentPlayer;
+      const bid = auction.currentBid;
+      const upd = {};
+      upd[`rooms/${ROOM}/teams/${tk}/members`]        = [...(teams[tk].members||[]), pid];
+      upd[`rooms/${ROOM}/teams/${tk}/points`]         = teams[tk].points - bid;
+      upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = tk;
+      const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
+      upd[`rooms/${ROOM}/auction/log`] = log;
+      await nextPlayer(upd);
+      showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
+    } else {
+      // 입찰자 없음 → 자동 유찰
+      await nextPlayer({});
+      showToast('⏰ 시간 초과 — 자동 유찰');
+    }
+    transLock = false;
+  }
 
   async function transitionToBidding() {
     if (roomData?.auction?.status !== 'preview') { transLock = false; return; }
@@ -471,9 +563,11 @@
     if (!auction.currentLeader) { showToast('입찰자가 없습니다'); return; }
     const tk  = auction.currentLeader, pid = auction.currentPlayer, bid = auction.currentBid;
     const upd = {};
-    upd[`rooms/${ROOM}/teams/${tk}/members`]   = [...(teams[tk].members||[]), pid];
-    upd[`rooms/${ROOM}/teams/${tk}/points`]    = teams[tk].points - bid;
+    upd[`rooms/${ROOM}/teams/${tk}/members`]       = [...(teams[tk].members||[]), pid];
+    upd[`rooms/${ROOM}/teams/${tk}/points`]        = teams[tk].points - bid;
     upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = tk;
+    const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
+    upd[`rooms/${ROOM}/auction/log`] = log;
     await nextPlayer(upd);
     showToast(`🔨 ${getTeamName(tk)} 낙찰! (-${bid}pt)`);
   }

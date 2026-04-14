@@ -84,6 +84,19 @@
     .grade-btn.sel-고{background:#ef4444;color:#fff;border-color:#ef4444;}
     .grade-btn.sel-저{background:#3b82f6;color:#fff;border-color:#3b82f6;}
 
+    /* 사진 업로드 */
+    .photo-upload-wrap{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .photo-preview{width:52px;height:52px;border-radius:8px;object-fit:cover;
+      background:var(--surface2);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+      flex-shrink:0;overflow:hidden;}
+    .photo-preview img{width:100%;height:100%;object-fit:cover;}
+    .photo-upload-label{flex:1;background:var(--surface2);border:1px dashed var(--border);
+      border-radius:8px;padding:8px 12px;font-size:.78rem;color:var(--muted);cursor:pointer;
+      text-align:center;transition:all .2s;}
+    .photo-upload-label:hover{border-color:var(--accent2);color:var(--accent2);}
+    .photo-upload-label input{display:none;}
+
     .add-btn{background:none;border:1px dashed var(--border);color:var(--muted);
       border-radius:8px;width:100%;padding:10px;font-size:.85rem;cursor:pointer;
       font-family:inherit;margin-top:4px;transition:all .2s;}
@@ -138,7 +151,7 @@
     <div class="fg"><label>최소 입찰 단위</label><input type="number" id="minBid" value="10" min="1" /></div>
   </div>
 
-  <p class="sec-title">팀장 이름</p>
+  <p class="sec-title">팀장 이름 & 사진</p>
   <div id="leaders-list"></div>
 
   <p class="sec-title">
@@ -173,10 +186,69 @@
 </footer>
 
 <script>
-  const ROLES  = ['탱커','딜러','힐러','유동'];
+  const ROLES  = ['탱커','딜러','힐러'];
   const TIERS  = ['언랭','브론즈1','브론즈2','브론즈3','실버1','실버2','실버3','골드1','골드2','골드3',
                   '플래1','플래2','플래3','다이아1','다이아2','다이아3','마스터','그랜드마스터','챔피언'];
   const STYLES = ['공격적 진입','안정적 서포트','한타 집중','포킹/라인전','유틸리티','플렉스 올라운더'];
+
+  // 오버워치 영웅 목록 (한국어명 → CDN 키)
+  const OW_HEROES = {
+    // 탱커
+    '디바':        'd.va',
+    '라마트라':    'ramattra',
+    '라인하르트':  'reinhardt',
+    '로드호그':    'roadhog',
+    '마우가':      'mauga',
+    '시그마':      'sigma',
+    '오리사':      'orisa',
+    '윈스턴':      'winston',
+    '자리야':      'zarya',
+    '정커퀸':      'junker-queen',
+    '토르비욘':    'torbjorn',
+    '해머':        'wrecking-ball',
+    // 딜러
+    '겐지':        'genji',
+    '맥크리':      'cassidy',
+    '미스포춘':    'misc-fortune',
+    '바스티온':    'bastion',
+    '솔저76':      'soldier-76',
+    '소전':        'sojourn',
+    '시메트라':    'symmetra',
+    '에코':        'echo',
+    '위도우메이커': 'widowmaker',
+    '정커랫':      'junkrat',
+    '파라':        'pharah',
+    '한조':        'hanzo',
+    '애쉬':        'ashe',
+    '리퍼':        'reaper',
+    '트레이서':    'tracer',
+    '토르': 'torbjorn',
+    '벤처':        'venture',
+    '하자드':      'hazard',
+    // 힐러
+    '아나':        'ana',
+    '루시우':      'lucio',
+    '메르시':      'mercy',
+    '모이라':      'moira',
+    '바티스트':    'baptiste',
+    '브리기테':    'brigitte',
+    '일라리':      'illari',
+    '젠야타':      'zenyatta',
+    '커샌더':      'cassidy', // 미존재시 폴백
+    '키리코':      'kiriko',
+    '라이프위버':  'lifeweaver',
+    '정커':        'junkrat',
+    '클레오':      'juno',
+  };
+
+  // CDN 이미지 URL 생성
+  function heroImgUrl(heroName) {
+    const key = OW_HEROES[heroName];
+    if (!key) return '';
+    return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${key}.png`;
+  }
+
+  const HERO_NAMES = Object.keys(OW_HEROES);
 
   // ── 팀 수 / 팀원 수 변경 시 → 팀장 + 선수 칸 자동 갱신
   function onConfigChange() {
@@ -197,18 +269,43 @@
   }
 
   // ── 팀장 렌더
+  const leaderPhotos = {}; // { index: dataURL }
   function renderLeaders() {
     const count = parseInt(document.getElementById('teamCount').value);
     const list  = document.getElementById('leaders-list');
-    const prev  = [...list.querySelectorAll('input')].map(i => i.value);
+    const prev  = [...list.querySelectorAll('.l-name')].map(i => i.value);
     list.innerHTML = '';
     for (let i = 0; i < count; i++) {
       const d = document.createElement('div');
       d.className = 'leader-item';
-      d.innerHTML = `<div class="leader-num">${i+1}</div>
-        <input type="text" placeholder="팀장 ${i+1} 닉네임" value="${prev[i]||''}" />`;
+      d.style.alignItems = 'center';
+      const photoSrc = leaderPhotos[i] ? `<img src="${leaderPhotos[i]}" />` : '👤';
+      d.innerHTML = `
+        <div class="leader-num">${i+1}</div>
+        <div class="photo-upload-wrap" style="flex:1;margin-bottom:0;gap:8px;">
+          <div class="photo-preview" id="lp-prev-${i}">${photoSrc}</div>
+          <label class="photo-upload-label">
+            📷 팀장 사진 (정사각형)
+            <input type="file" accept="image/*" onchange="handleLeaderPhoto(${i},this)" />
+          </label>
+          <input class="l-name" type="text" placeholder="팀장 ${i+1} 닉네임" value="${prev[i]||''}"
+            style="flex:1.5;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+            color:var(--text);padding:9px 12px;font-size:.9rem;font-family:inherit;outline:none;" />
+        </div>`;
       list.appendChild(d);
     }
+  }
+
+  function handleLeaderPhoto(idx, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      leaderPhotos[idx] = e.target.result;
+      const prev = document.getElementById(`lp-prev-${idx}`);
+      prev.innerHTML = `<img src="${e.target.result}" />`;
+    };
+    reader.readAsDataURL(file);
   }
 
   // ── 선수 칸 자동 생성 (팀수 × 팀원수 - 팀수)
@@ -255,6 +352,18 @@
       </div>
 
       <div style="margin-bottom:10px;">
+        <label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px;">선수 사진</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="photo-preview" id="pp-prev-${id}">👤</div>
+          <label class="photo-upload-label" style="flex:1;">
+            📷 사진 업로드
+            <input type="file" accept="image/*" onchange="handlePlayerPhoto(${id},this)" />
+          </label>
+          <input type="hidden" class="p-photo" value="" />
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px;">
         <label style="margin-bottom:6px;">등급</label>
         <div class="grade-group">
           <button type="button" class="grade-btn sel-고" data-id="${id}" data-v="고" onclick="selGrade(${id},'고')">🔴 고티어</button>
@@ -272,17 +381,26 @@
           <select class="p-peak">${TIERS.map(t=>`<option>${t}</option>`).join('')}</select></div>
       </div>
 
-      <div class="r2" style="margin-bottom:10px;">
-        <div class="fg" style="margin:0;"><label>선호 영웅 1</label>
-          <input class="p-h1" type="text" placeholder="예: 라인하르트" /></div>
-        <div class="fg" style="margin:0;"><label>선호 영웅 2</label>
-          <input class="p-h2" type="text" placeholder="예: 아나" /></div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:6px;">선호 영웅 (최대 3개)</label>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          ${[1,2,3].map(n => `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="hi-${id}-${n}" style="width:40px;height:40px;border-radius:6px;overflow:hidden;
+              background:var(--surface);border:1px solid var(--border);flex-shrink:0;
+              display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🎮</div>
+            <select class="p-h${n}" style="flex:1;background:var(--surface2);border:1px solid var(--border);
+              border-radius:8px;color:var(--text);padding:7px 10px;font-size:.85rem;font-family:inherit;outline:none;"
+              onchange="onHeroSelect(${id},${n},this.value)">
+              <option value="">-- 영웅 선택 --</option>
+              ${HERO_NAMES.map(h=>`<option>${h}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+        </div>
       </div>
-      <div class="r2" style="margin-bottom:10px;">
-        <div class="fg" style="margin:0;"><label>선호 영웅 3</label>
-          <input class="p-h3" type="text" placeholder="예: 루시우" /></div>
-        <div class="fg" style="margin:0;"><label>플레이 스타일</label>
-          <select class="p-style">${STYLES.map(s=>`<option>${s}</option>`).join('')}</select></div>
+
+      <div class="fg" style="margin-bottom:10px;"><label>플레이 스타일</label>
+        <select class="p-style">${STYLES.map(s=>`<option>${s}</option>`).join('')}</select>
       </div>
 
       <div class="fg" style="margin:0;"><label>한 줄 소개 (어필 포인트)</label>
@@ -290,6 +408,28 @@
     `;
     document.getElementById('players-list').appendChild(d);
     updateHint();
+  }
+
+  function onHeroSelect(id, slot, heroName) {
+    const imgEl = document.getElementById(`hi-${id}-${slot}`);
+    const url   = heroImgUrl(heroName);
+    if (url) {
+      imgEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='🎮'" />`;
+    } else {
+      imgEl.innerHTML = '🎮';
+    }
+  }
+
+  function handlePlayerPhoto(id, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById(`pp-prev-${id}`).innerHTML = `<img src="${e.target.result}" />`;
+      const card = document.getElementById(`pfc-${id}`);
+      card.querySelector('.p-photo').value = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   function selGrade(id, v) {
@@ -311,8 +451,10 @@
     const timerSec       = parseInt(document.getElementById('timerSec').value);
     const minBid         = parseInt(document.getElementById('minBid').value);
 
-    const leaders = [...document.querySelectorAll('#leaders-list input')]
+    const leaders = [...document.querySelectorAll('#leaders-list .l-name')]
       .map((el,i) => el.value.trim() || `팀장${i+1}`);
+    const leaderPhotoList = [...document.querySelectorAll('#leaders-list .l-name')]
+      .map((el,i) => leaderPhotos[i] || '');
 
     const players = [];
     document.querySelectorAll('.pfc').forEach(card => {
@@ -330,6 +472,7 @@
         hero3:    card.querySelector('.p-h3').value.trim(),
         style:    card.querySelector('.p-style').value,
         intro:    card.querySelector('.p-intro').value.trim(),
+        photo:    card.querySelector('.p-photo').value,
         assignedTo: null
       });
     });
@@ -342,13 +485,22 @@
     leaders.forEach((name, i) => {
       teams[`team_${i}`] = {
         name, points, members: [],
+        photo: leaderPhotoList[i] || '',
         leaderToken: Math.random().toString(36).substring(2, 10)
       };
     });
 
-    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    // 경매 순서: 딜러 → 탱커 → 힐러 → 유동, 같은 포지션 내 고티어 → 저티어
+    const ROLE_ORDER = { '딜러': 0, '탱커': 1, '힐러': 2, '유동': 3 };
+    const GRADE_ORDER = { '고': 0, '저': 1 };
+    const sorted = [...players].sort((a, b) => {
+      const rA = ROLE_ORDER[a.role] ?? 99;
+      const rB = ROLE_ORDER[b.role] ?? 99;
+      if (rA !== rB) return rA - rB;
+      return (GRADE_ORDER[a.grade] ?? 1) - (GRADE_ORDER[b.grade] ?? 1);
+    });
     const playersObj = {};
-    shuffled.forEach((p, i) => { playersObj[`player_${i}`] = p; });
+    sorted.forEach((p, i) => { playersObj[`player_${i}`] = p; });
 
     const roomData = {
       meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now() },
@@ -356,11 +508,12 @@
       players: playersObj,
       auction: {
         status: 'waiting',
-        order: Object.keys(playersObj),
+        order: Object.keys(playersObj), // already sorted
         currentPlayer: null,
         currentBid: 0,
         currentLeader: null,
-        timerEndsAt: null
+        timerEndsAt: null,
+        log: []
       }
     };
 

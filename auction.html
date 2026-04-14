@@ -133,8 +133,17 @@
     .btn-bid:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.4);}
     .btn-bid:disabled{opacity:.3;cursor:not-allowed;}
 
-    /* NEXT */
-    .next-section{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);
+    /* 영웅 아이콘 */
+    .hero-icon-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px;}
+    .hero-icon{width:46px;height:46px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
+      background:var(--surface2);flex-shrink:0;position:relative;}
+    .hero-icon img{width:100%;height:100%;object-fit:cover;}
+    .hero-icon-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.72);
+      font-size:.48rem;text-align:center;padding:1px 2px;color:#fff;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;}
+    .hero-tag{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+      padding:3px 8px;font-size:.72rem;color:var(--text);}
+
       border-radius:10px;display:flex;align-items:center;gap:10px;margin-top:12px;}
     .next-label{font-size:.75rem;color:var(--danger);font-weight:700;letter-spacing:1px;flex-shrink:0;}
     .next-grade-badge{padding:2px 7px;border-radius:4px;font-size:.7rem;font-weight:700;flex-shrink:0;}
@@ -284,6 +293,30 @@
 </footer>
 
 <script>
+  const OW_HEROES = {
+    '디바':'d.va','라마트라':'ramattra','라인하르트':'reinhardt','로드호그':'roadhog',
+    '마우가':'mauga','시그마':'sigma','오리사':'orisa','윈스턴':'winston','자리야':'zarya',
+    '정커퀸':'junker-queen','해머':'wrecking-ball','겐지':'genji','맥크리':'cassidy',
+    '미스포춘':'misc-fortune','바스티온':'bastion','솔저76':'soldier-76','소전':'sojourn',
+    '시메트라':'symmetra','에코':'echo','위도우메이커':'widowmaker','정커랫':'junkrat',
+    '파라':'pharah','한조':'hanzo','애쉬':'ashe','리퍼':'reaper','트레이서':'tracer',
+    '벤처':'venture','하자드':'hazard','아나':'ana','루시우':'lucio','메르시':'mercy',
+    '모이라':'moira','바티스트':'baptiste','브리기테':'brigitte','일라리':'illari',
+    '젠야타':'zenyatta','키리코':'kiriko','라이프위버':'lifeweaver','주노':'juno',
+  };
+  function heroImgUrl(name) {
+    const k = OW_HEROES[name];
+    return k ? `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png` : '';
+  }
+  function renderHeroes(heroes) {
+    return heroes.filter(Boolean).map(h => {
+      const url = heroImgUrl(h);
+      return url
+        ? `<div class="hero-icon"><img src="${url}" onerror="this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'" /><div class="hero-icon-name">${h}</div></div>`
+        : `<span class="hero-tag">⚔ ${h}</span>`;
+    }).join('');
+  }
+
   const params   = new URLSearchParams(location.search);
   const ROOM     = params.get('room');
   const TEAM_KEY = params.get('team');
@@ -353,9 +386,10 @@
       <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
     `;
 
-    // 영웅
+    // 영웅 — 이미지로 표시
     const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
-    document.getElementById('pc-heroes').innerHTML = heroes.map(h=>`<span class="hero-tag">⚔ ${h}</span>`).join('');
+    document.getElementById('pc-heroes').className = 'hero-icon-wrap';
+    document.getElementById('pc-heroes').innerHTML = renderHeroes(heroes);
 
     // 메타
     document.getElementById('pc-meta').innerHTML = `

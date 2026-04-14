@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 패널 - 도현 유인원 컵</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    const app = initializeApp(firebaseConfig);
+    window._db = getDatabase(app);
+    window._dbFns = { ref, onValue, update, get, set };
+  </script>
+  <style>
+    :root {
+      --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e3a5f;
+      --accent:#f59e0b; --accent2:#3b82f6; --text:#e2e8f0; --muted:#64748b;
+      --danger:#ef4444; --success:#22c55e; --warn:#f97316;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;
+      letter-spacing:-0.03em;min-height:100vh;padding:24px 16px;
+      background-image:radial-gradient(ellipse at 20% 50%,rgba(239,68,68,.06) 0%,transparent 60%),
+                       radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.06) 0%,transparent 60%);}
+
+    /* ── 로그인 화면 ── */
+    #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:80vh;gap:16px;}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+      padding:40px 32px;width:100%;max-width:400px;text-align:center;}
+    .login-icon{font-size:3rem;margin-bottom:16px;}
+    .login-title{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;color:var(--accent);margin-bottom:6px;}
+    .login-sub{font-size:.85rem;color:var(--muted);margin-bottom:28px;}
+    .pw-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+      color:var(--text);padding:13px 16px;font-size:1.1rem;font-family:inherit;outline:none;
+      text-align:center;letter-spacing:4px;transition:border-color .2s;margin-bottom:12px;}
+    .pw-input:focus{border-color:var(--accent);}
+    .pw-error{color:var(--danger);font-size:.82rem;margin-bottom:10px;min-height:20px;}
+
+    /* ── 메인 레이아웃 ── */
+    #admin-screen{display:none;max-width:1100px;margin:0 auto;}
+    .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+    .admin-logo{font-family:'Black Han Sans',sans-serif;font-size:1.5rem;color:var(--accent);}
+    .admin-badge{background:rgba(239,68,68,.15);border:1px solid var(--danger);border-radius:20px;
+      padding:5px 14px;font-size:.78rem;color:var(--danger);font-weight:700;}
+    .room-pill{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      padding:6px 14px;font-size:.82rem;color:var(--muted);}
+    .room-pill span{color:var(--accent);font-weight:700;letter-spacing:3px;}
+
+    /* ── 탭 ── */
+    .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);
+      border:1px solid var(--border);border-radius:12px;padding:4px;}
+    .tab{flex:1;padding:9px 12px;border:none;border-radius:9px;font-size:.82rem;font-weight:700;
+      font-family:inherit;cursor:pointer;transition:all .2s;color:var(--muted);background:none;text-align:center;}
+    .tab.active{background:var(--accent);color:#0a0e1a;}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+
+    /* ── 공통 카드 ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+      padding:20px;margin-bottom:14px;}
+    .card-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;
+      letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .card-title .badge{background:var(--surface2);border-radius:6px;padding:2px 8px;
+      font-size:.68rem;color:var(--accent);border:1px solid rgba(245,158,11,.3);}
+
+    /* ── 폼 ── */
+    label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:4px;}
+    input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);padding:8px 11px;font-size:.88rem;
+      font-family:inherit;outline:none;transition:border-color .2s;}
+    input:focus,select:focus{border-color:var(--accent2);}
+    .fg{margin-bottom:10px;}
+    .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+    /* ── 버튼 ── */
+    .btn{padding:8px 16px;border:none;border-radius:8px;font-size:.85rem;font-weight:700;
+      font-family:inherit;cursor:pointer;transition:all .2s;}
+    .btn-sm{padding:5px 12px;font-size:.75rem;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#d97706);color:#0a0e1a;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(245,158,11,.4);}
+    .btn-danger{background:var(--danger);color:#fff;}
+    .btn-danger:hover{opacity:.85;}
+    .btn-warn{background:var(--warn);color:#fff;}
+    .btn-warn:hover{opacity:.85;}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+    .btn-ghost:hover{border-color:var(--accent2);}
+    .btn-success{background:var(--success);color:#0a0e1a;}
+
+    /* ── 팀장 카드 ── */
+    .leader-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+    .leader-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+    .lc-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .lc-photo{width:52px;height:52px;border-radius:8px;object-fit:cover;background:var(--surface);
+      border:2px solid var(--border);display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;cursor:pointer;overflow:hidden;transition:border-color .2s;}
+    .lc-photo:hover{border-color:var(--accent);}
+    .lc-photo img{width:100%;height:100%;object-fit:cover;}
+    .lc-pts{font-family:'Black Han Sans',sans-serif;font-size:1.2rem;color:var(--accent);}
+    .pts-row{display:flex;gap:6px;align-items:center;margin-top:8px;}
+    .pts-row input{flex:1;padding:6px 10px;font-size:.85rem;}
+    .pts-row button{flex-shrink:0;}
+
+    /* ── 선수 테이블 ── */
+    .player-table{width:100%;border-collapse:collapse;}
+    .player-table th{text-align:left;font-size:.68rem;color:var(--muted);padding:6px 8px;
+      border-bottom:1px solid var(--border);font-weight:600;letter-spacing:.5px;}
+    .player-table td{padding:7px 8px;border-bottom:1px solid rgba(30,58,95,.4);vertical-align:middle;font-size:.82rem;}
+    .player-table tr:hover td{background:rgba(255,255,255,.02);}
+    .player-table tr.assigned td{opacity:.55;}
+    .role-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:700;}
+    .role-딜러{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
+    .role-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
+    .role-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
+    .role-유동{background:rgba(245,158,11,.2);color:#f59e0b;border:1px solid #f59e0b;}
+    .grade-고{color:#ef4444;font-weight:700;}
+    .grade-저{color:#3b82f6;font-weight:700;}
+    .assigned-tag{font-size:.68rem;color:var(--success);background:rgba(34,197,94,.1);
+      border:1px solid rgba(34,197,94,.3);border-radius:4px;padding:2px 6px;}
+
+    /* ── 인라인 편집 ── */
+    .inline-input{background:var(--surface);border:1px solid var(--accent2);border-radius:5px;
+      color:var(--text);padding:3px 7px;font-size:.82rem;font-family:inherit;
+      outline:none;width:90px;}
+    .inline-select{background:var(--surface);border:1px solid var(--accent2);border-radius:5px;
+      color:var(--text);padding:3px 5px;font-size:.78rem;font-family:inherit;outline:none;}
+
+    /* ── 경매 순서 드래그 ── */
+    .order-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;}
+    .order-list::-webkit-scrollbar{width:3px;}
+    .order-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+    .order-item{display:flex;align-items:center;gap:10px;padding:9px 14px;
+      background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      cursor:grab;transition:all .15s;user-select:none;}
+    .order-item:active{cursor:grabbing;}
+    .order-item.dragging{opacity:.4;border-color:var(--accent);}
+    .order-item.drag-over{border-color:var(--accent2);background:rgba(59,130,246,.08);}
+    .order-item.done-item{opacity:.35;text-decoration:line-through;}
+    .order-num{font-size:.68rem;color:var(--muted);min-width:22px;text-align:right;}
+    .order-drag{color:var(--muted);font-size:.9rem;cursor:grab;padding:0 2px;}
+    .order-grade{font-size:.7rem;font-weight:700;min-width:20px;}
+    .order-role{font-size:.7rem;color:var(--muted);min-width:30px;}
+    .order-name{font-size:.88rem;flex:1;}
+    .order-assigned{font-size:.7rem;color:var(--success);margin-left:auto;}
+
+    /* ── 낙찰 취소 ── */
+    .settled-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+    .settled-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+      background:var(--surface2);border:1px solid var(--border);border-radius:8px;}
+    .si-player{font-size:.9rem;font-weight:700;flex:1;}
+    .si-team{font-size:.78rem;color:var(--accent2);}
+    .si-price{font-family:'Black Han Sans',sans-serif;font-size:1rem;color:var(--accent);}
+
+    /* ── 토스트 ── */
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+      background:var(--surface2);border:1px solid var(--border);color:var(--text);
+      padding:11px 22px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;
+      transition:opacity .3s;z-index:999;}
+    .toast.show{opacity:1;}
+
+    /* ── 경고 박스 ── */
+    .warn-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;
+      padding:12px 16px;font-size:.82rem;color:#fca5a5;margin-bottom:16px;}
+
+    /* ── 사진 업로드 ── */
+    .photo-upload-wrap{display:flex;align-items:center;gap:8px;margin-top:6px;}
+    .photo-upload-label{flex:1;background:var(--surface);border:1px dashed var(--border);
+      border-radius:7px;padding:6px 10px;font-size:.75rem;color:var(--muted);cursor:pointer;
+      text-align:center;transition:all .2s;}
+    .photo-upload-label:hover{border-color:var(--accent2);color:var(--accent2);}
+    .photo-upload-label input{display:none;}
+
+    @media(max-width:600px){
+      .tabs .tab{font-size:.72rem;padding:8px 6px;}
+      .leader-cards{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ 로그인 화면 ══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">관리자 패널</div>
+    <div class="login-sub">도현 유인원 컵 · 경매 데이터 관리</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="비밀번호"
+      onkeydown="if(event.key==='Enter')checkPw()" />
+    <div class="pw-error" id="pw-error"></div>
+    <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="checkPw()">입장하기</button>
+  </div>
+</div>
+
+<!-- ══════════════════ 관리자 화면 ══════════════════ -->
+<div id="admin-screen">
+  <div class="top-bar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="admin-logo">⚙ 관리자</div>
+      <div class="admin-badge">ADMIN</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="room-pill">방 코드: <span id="room-code-disp">-</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="window.open('host.html?room='+ROOM,'_blank')">🖥 호스트 열기</button>
+      <button class="btn btn-ghost btn-sm" onclick="location.href='index.html'">← 나가기</button>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('leaders')">👑 팀장</button>
+    <button class="tab" onclick="switchTab('players')">🎮 선수</button>
+    <button class="tab" onclick="switchTab('order')">📋 경매순서</button>
+    <button class="tab" onclick="switchTab('cancel')">↩ 낙찰취소</button>
+    <button class="tab" onclick="switchTab('danger')">⚠ 위험</button>
+  </div>
+
+  <!-- ─── 탭 1: 팀장 관리 ─── -->
+  <div class="tab-content active" id="tab-leaders">
+    <div class="card">
+      <div class="card-title">팀장 정보 수정 <span class="badge">저장 즉시 반영</span></div>
+      <div class="leader-cards" id="leader-cards"></div>
+    </div>
+  </div>
+
+  <!-- ─── 탭 2: 선수 관리 ─── -->
+  <div class="tab-content" id="tab-players">
+    <div class="card">
+      <div class="card-title">선수 정보 수정 <span class="badge" id="player-count-badge"></span></div>
+      <div style="overflow-x:auto;">
+        <table class="player-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>닉네임</th>
+              <th>포지션</th>
+              <th>등급</th>
+              <th>현재 티어</th>
+              <th>역대 최고</th>
+              <th>소속</th>
+              <th>저장</th>
+            </tr>
+          </thead>
+          <tbody id="player-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 탭 3: 경매 순서 ─── -->
+  <div class="tab-content" id="tab-order">
+    <div class="card">
+      <div class="card-title">경매 순서 변경 <span class="badge">드래그로 순서 조정</span></div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">
+        완료된 선수(취소선)는 이미 낙찰된 선수예요. 미낙찰 선수만 드래그로 순서를 바꿀 수 있어요.
+      </p>
+      <div class="order-list" id="order-list"></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="saveOrder()">💾 순서 저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="sortByRoleGrade()">🔄 딜→탱→힐→유동 / 고→저 재정렬</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 탭 4: 낙찰 취소 ─── -->
+  <div class="tab-content" id="tab-cancel">
+    <div class="card">
+      <div class="card-title">낙찰 취소 / 재경매</div>
+      <div class="warn-box">⚠️ 낙찰 취소 시 해당 선수는 경매 대기 상태로 돌아가고, 팀 포인트가 복구됩니다.</div>
+      <div class="settled-list" id="settled-list"></div>
+    </div>
+  </div>
+
+  <!-- ─── 탭 5: 위험 ─── -->
+  <div class="tab-content" id="tab-danger">
+    <div class="card">
+      <div class="card-title" style="color:var(--danger);">⚠️ 위험 구역</div>
+      <div class="warn-box">아래 작업들은 되돌리기 어렵습니다. 신중하게 사용하세요.</div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:6px;">경매 초기화</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">모든 낙찰 기록을 지우고, 팀 포인트를 초기값으로 되돌리고, 경매를 대기 상태로 초기화합니다.</div>
+          <button class="btn btn-danger" onclick="resetAuction()">🔄 경매 전체 초기화</button>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:6px;">경매 완료 처리</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">경매가 진행 중이더라도 강제로 완료 상태로 설정합니다.</div>
+          <button class="btn btn-warn" onclick="forceFinish()">⏹ 강제 종료</button>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:6px;">비밀번호 변경</div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="password" id="new-pw" placeholder="새 비밀번호"
+              style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+              color:var(--text);padding:8px 12px;font-size:.88rem;font-family:inherit;outline:none;" />
+            <button class="btn btn-ghost" onclick="changePw()">변경</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── 상수
+  const ADMIN_PW_KEY  = 'admin_pw_dohyeon'; // localStorage key
+  const DEFAULT_PW    = '1234';             // ← 여기서 초기 비밀번호 변경 가능
+  const ROLES_ORDER   = ['딜러','탱커','힐러','유동'];
+  const TIERS         = ['언랭','브론즈1','브론즈2','브론즈3','실버1','실버2','실버3',
+                          '골드1','골드2','골드3','플래1','플래2','플래3',
+                          '다이아1','다이아2','다이아3','마스터','그랜드마스터','챔피언'];
+
+  // ── 방 코드
+  const params = new URLSearchParams(location.search);
+  const ROOM   = params.get('room');
+  if (!ROOM) { alert('방 코드가 없습니다.'); location.href = 'index.html'; }
+  document.getElementById('room-code-disp').textContent = ROOM;
+
+  let roomData = null;
+  let orderDragSrc = null;
+
+  // ── 비밀번호 체크
+  function getAdminPw() { return localStorage.getItem(ADMIN_PW_KEY) || DEFAULT_PW; }
+
+  function checkPw() {
+    const val = document.getElementById('pw-input').value;
+    if (val === getAdminPw()) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+      loadData();
+    } else {
+      const err = document.getElementById('pw-error');
+      err.textContent = '비밀번호가 틀렸습니다';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+      setTimeout(() => { err.textContent = ''; }, 2000);
+    }
+  }
+
+  function changePw() {
+    const np = document.getElementById('new-pw').value.trim();
+    if (!np || np.length < 2) { showToast('비밀번호는 2자 이상이어야 합니다'); return; }
+    localStorage.setItem(ADMIN_PW_KEY, np);
+    document.getElementById('new-pw').value = '';
+    showToast('✅ 비밀번호 변경 완료');
+  }
+
+  // ── 탭 전환
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const names = ['leaders','players','order','cancel','danger'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+    if (name === 'order') renderOrder();
+    if (name === 'cancel') renderSettled();
+  }
+
+  // ── Firebase 실시간 수신
+  function loadData() {
+    const { ref, onValue } = window._dbFns;
+    onValue(ref(window._db, `rooms/${ROOM}`), snap => {
+      if (!snap.exists()) { showToast('방을 찾을 수 없습니다'); return; }
+      roomData = snap.val();
+      renderLeaders();
+      renderPlayers();
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // TAB 1: 팀장
+  // ══════════════════════════════════════════
+  function renderLeaders() {
+    if (!roomData) return;
+    const { teams, meta } = roomData;
+    const initPts = meta.points || 1000;
+    document.getElementById('leader-cards').innerHTML = Object.entries(teams).map(([tk, t]) => {
+      const photo = t.photo
+        ? `<img src="${t.photo}" />`
+        : `<span style="font-size:1.3rem;">👤</span>`;
+      return `
+      <div class="leader-card">
+        <div class="lc-header">
+          <div class="lc-photo" id="lc-photo-${tk}" onclick="triggerLeaderPhoto('${tk}')"
+            title="클릭해서 사진 변경">
+            ${photo}
+          </div>
+          <input type="file" id="lc-file-${tk}" accept="image/*" style="display:none"
+            onchange="handleLeaderPhotoChange('${tk}',this)" />
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.68rem;color:var(--muted);margin-bottom:3px;">팀장 닉네임</div>
+            <input id="l-name-${tk}" value="${t.name||''}"
+              style="width:100%;background:var(--surface);border:1px solid var(--border);
+              border-radius:6px;color:var(--text);padding:5px 8px;font-size:.88rem;
+              font-family:inherit;outline:none;" />
+          </div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);margin-bottom:3px;">잔여 포인트</div>
+        <div class="lc-pts">${t.points ?? initPts} <span style="font-size:.68rem;color:var(--muted);font-family:'Pretendard';">pt</span></div>
+        <div class="pts-row">
+          <input type="number" id="l-pts-${tk}" placeholder="새 포인트" min="0" />
+          <button class="btn btn-warn btn-sm" onclick="saveLeaderPts('${tk}')">포인트 설정</button>
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:8px;" onclick="saveLeaderName('${tk}')">💾 이름 저장</button>
+      </div>`;
+    }).join('');
+  }
+
+  function triggerLeaderPhoto(tk) {
+    document.getElementById(`lc-file-${tk}`).click();
+  }
+
+  function handleLeaderPhotoChange(tk, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const dataUrl = e.target.result;
+      document.getElementById(`lc-photo-${tk}`).innerHTML = `<img src="${dataUrl}" />`;
+      const { ref, update } = window._dbFns;
+      await update(ref(window._db, `rooms/${ROOM}/teams/${tk}`), { photo: dataUrl });
+      showToast('✅ 팀장 사진 저장됨');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function saveLeaderName(tk) {
+    const name = document.getElementById(`l-name-${tk}`).value.trim();
+    if (!name) { showToast('이름을 입력해주세요'); return; }
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db, `rooms/${ROOM}/teams/${tk}`), { name });
+    showToast(`✅ ${name} 저장됨`);
+  }
+
+  async function saveLeaderPts(tk) {
+    const val = parseInt(document.getElementById(`l-pts-${tk}`).value);
+    if (isNaN(val) || val < 0) { showToast('올바른 포인트를 입력해주세요'); return; }
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db, `rooms/${ROOM}/teams/${tk}`), { points: val });
+    document.getElementById(`l-pts-${tk}`).value = '';
+    showToast(`✅ 포인트 ${val}pt 로 설정됨`);
+  }
+
+  // ══════════════════════════════════════════
+  // TAB 2: 선수
+  // ══════════════════════════════════════════
+  const ROLES = ['딜러','탱커','힐러'];
+
+  function renderPlayers() {
+    if (!roomData) return;
+    const { players, teams } = roomData;
+    const entries = Object.entries(players || {});
+    document.getElementById('player-count-badge').textContent = `총 ${entries.length}명`;
+
+    document.getElementById('player-tbody').innerHTML = entries.map(([pid, p], i) => {
+      const isAssigned = p.assignedTo != null;
+      const teamName   = isAssigned ? (teams[p.assignedTo]?.name || p.assignedTo) : '';
+      const roleOpts   = ROLES.map(r => `<option${r===p.role?' selected':''}>${r}</option>`).join('');
+      const tierOpts   = TIERS.map(t => `<option${t===p.curTier?' selected':''}>${t}</option>`).join('');
+      const peakOpts   = TIERS.map(t => `<option${t===p.peakTier?' selected':''}>${t}</option>`).join('');
+      const gradeOpts  = ['고','저'].map(g => `<option${g===p.grade?' selected':''}>${g}</option>`).join('');
+      const photoThumb = p.photo
+        ? `<img src="${p.photo}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;margin-right:4px;vertical-align:middle;" />`
+        : '';
+
+      return `<tr class="${isAssigned?'assigned':''}">
+        <td style="color:var(--muted);font-size:.72rem;">${i+1}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:4px;">
+            ${photoThumb}
+            <input class="inline-input" id="pn-${pid}" value="${p.name||''}" style="width:100px;" />
+          </div>
+        </td>
+        <td><select class="inline-select" id="pr-${pid}">${roleOpts}</select></td>
+        <td>
+          <select class="inline-select" id="pg-${pid}" style="width:52px;">
+            ${gradeOpts}
+          </select>
+        </td>
+        <td><select class="inline-select" id="pc-${pid}" style="width:80px;">${tierOpts}</select></td>
+        <td><select class="inline-select" id="pp-${pid}" style="width:80px;">${peakOpts}</select></td>
+        <td>
+          ${isAssigned
+            ? `<span class="assigned-tag">▸ ${teamName}</span>`
+            : `<span style="color:var(--muted);font-size:.72rem;">미배정</span>`}
+        </td>
+        <td>
+          <button class="btn btn-success btn-sm" onclick="savePlayer('${pid}')">저장</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function savePlayer(pid) {
+    const { ref, update } = window._dbFns;
+    const upd = {
+      name:    document.getElementById(`pn-${pid}`).value.trim(),
+      role:    document.getElementById(`pr-${pid}`).value,
+      grade:   document.getElementById(`pg-${pid}`).value,
+      curTier: document.getElementById(`pc-${pid}`).value,
+      peakTier:document.getElementById(`pp-${pid}`).value,
+    };
+    if (!upd.name) { showToast('이름을 입력해주세요'); return; }
+    await update(ref(window._db, `rooms/${ROOM}/players/${pid}`), upd);
+    showToast(`✅ ${upd.name} 저장됨`);
+  }
+
+  // ══════════════════════════════════════════
+  // TAB 3: 경매 순서
+  // ══════════════════════════════════════════
+  let localOrder = [];
+
+  function renderOrder() {
+    if (!roomData) return;
+    const { auction, players } = roomData;
+    localOrder = [...(auction.order || [])];
+    drawOrderList();
+  }
+
+  function drawOrderList() {
+    const { players } = roomData;
+    const el = document.getElementById('order-list');
+    el.innerHTML = localOrder.map((pid, i) => {
+      const p = players[pid];
+      const isDone = p?.assignedTo != null;
+      const g = p?.grade || '고';
+      return `<div class="order-item${isDone?' done-item':''}"
+          draggable="${!isDone}"
+          data-pid="${pid}"
+          ondragstart="dragStart(event,'${pid}')"
+          ondragover="dragOver(event)"
+          ondrop="dropOn(event,'${pid}')"
+          ondragleave="dragLeave(event)"
+          ondragend="dragEnd(event)">
+        <span class="order-drag">⠿</span>
+        <span class="order-num">${i+1}</span>
+        <span class="order-grade grade-${g==='고'?'고':'저'}">${g==='고'?'🔴':'🔵'}</span>
+        <span class="order-role">${p?.role||''}</span>
+        <span class="order-name">${p?.name||pid}</span>
+        ${isDone ? `<span class="order-assigned">→ ${roomData.teams[p.assignedTo]?.name||''}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function dragStart(e, pid) {
+    orderDragSrc = pid;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function dragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  }
+  function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  function dragEnd(e)   { e.target.classList.remove('dragging'); }
+  function dropOn(e, targetPid) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!orderDragSrc || orderDragSrc === targetPid) return;
+    const fromIdx = localOrder.indexOf(orderDragSrc);
+    const toIdx   = localOrder.indexOf(targetPid);
+    if (fromIdx === -1 || toIdx === -1) return;
+    localOrder.splice(fromIdx, 1);
+    localOrder.splice(toIdx, 0, orderDragSrc);
+    orderDragSrc = null;
+    drawOrderList();
+  }
+
+  function sortByRoleGrade() {
+    const { players, auction } = roomData;
+    const ROLE_O  = { '딜러':0,'탱커':1,'힐러':2,'유동':3 };
+    const GRADE_O = { '고':0,'저':1 };
+    const done    = localOrder.filter(pid => players[pid]?.assignedTo != null);
+    const pending = localOrder.filter(pid => players[pid]?.assignedTo == null);
+    pending.sort((a,b) => {
+      const pa = players[a], pb = players[b];
+      const rA = ROLE_O[pa?.role] ?? 99, rB = ROLE_O[pb?.role] ?? 99;
+      if (rA !== rB) return rA - rB;
+      return (GRADE_O[pa?.grade] ?? 1) - (GRADE_O[pb?.grade] ?? 1);
+    });
+    // 완료된 것은 현재 위치 유지, 미완료를 재정렬
+    // 순서: 완료 선수는 앞에서 제거되고 대기 선수만 다시 붙임
+    localOrder = [...done, ...pending];
+    drawOrderList();
+    showToast('재정렬됨 (저장 버튼 눌러서 반영하세요)');
+  }
+
+  async function saveOrder() {
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db, `rooms/${ROOM}/auction`), { order: localOrder });
+    showToast('✅ 경매 순서 저장됨');
+  }
+
+  // ══════════════════════════════════════════
+  // TAB 4: 낙찰 취소
+  // ══════════════════════════════════════════
+  function renderSettled() {
+    if (!roomData) return;
+    const { players, teams, auction } = roomData;
+    const settled = Object.entries(players || {})
+      .filter(([,p]) => p.assignedTo != null);
+
+    if (settled.length === 0) {
+      document.getElementById('settled-list').innerHTML =
+        `<div style="color:var(--muted);font-size:.85rem;padding:16px;text-align:center;">낙찰된 선수가 없습니다</div>`;
+      return;
+    }
+
+    // 낙찰 로그가 있으면 가격 표시
+    const logMap = {};
+    (auction.log || []).forEach(entry => { logMap[entry.pid] = entry.price; });
+
+    document.getElementById('settled-list').innerHTML = settled.map(([pid, p]) => {
+      const teamName = teams[p.assignedTo]?.name || p.assignedTo;
+      const price    = logMap[pid] ?? '?';
+      return `<div class="settled-item">
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <div class="si-player">${p.name}</div>
+          <div style="font-size:.72rem;color:var(--muted);">${p.role} · ${p.grade==='고'?'🔴 고티어':'🔵 저티어'}</div>
+        </div>
+        <div class="si-team">${teamName}</div>
+        <div class="si-price">${price}pt</div>
+        <button class="btn btn-danger btn-sm" onclick="cancelSettle('${pid}','${p.assignedTo}',${price})">취소</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function cancelSettle(pid, teamKey, price) {
+    if (!confirm(`이 낙찰을 취소하시겠습니까?\n포인트 ${price}pt 가 복구됩니다.`)) return;
+    const { ref, update, get } = window._dbFns;
+
+    // 팀 포인트 복구
+    const teamSnap = await get(ref(window._db, `rooms/${ROOM}/teams/${teamKey}`));
+    const team = teamSnap.val();
+    const recoveredPts = (team.points || 0) + (isNaN(price) ? 0 : price);
+
+    // 팀 멤버에서 제거
+    const members = (team.members || []).filter(m => m !== pid);
+
+    // 경매 순서에 다시 추가
+    const auctionSnap = await get(ref(window._db, `rooms/${ROOM}/auction`));
+    const auction = auctionSnap.val();
+    const order   = [...(auction.order || [])];
+    if (!order.includes(pid)) order.push(pid);
+
+    // 로그에서 제거
+    const log = (auction.log || []).filter(e => e.pid !== pid);
+
+    const upd = {};
+    upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = null;
+    upd[`rooms/${ROOM}/teams/${teamKey}/points`]    = recoveredPts;
+    upd[`rooms/${ROOM}/teams/${teamKey}/members`]   = members;
+    upd[`rooms/${ROOM}/auction/order`]              = order;
+    upd[`rooms/${ROOM}/auction/log`]                = log;
+
+    await update(ref(window._db), upd);
+    showToast('✅ 낙찰 취소 완료, 포인트 복구됨');
+  }
+
+  // ══════════════════════════════════════════
+  // TAB 5: 위험 구역
+  // ══════════════════════════════════════════
+  async function resetAuction() {
+    if (!confirm('경매를 완전히 초기화합니다.\n모든 낙찰 기록이 사라집니다. 계속할까요?')) return;
+    const { ref, update, get } = window._dbFns;
+    const snap = await get(ref(window._db, `rooms/${ROOM}`));
+    const data = snap.val();
+
+    const upd = {};
+    const initPts = data.meta.points || 1000;
+
+    // 팀 포인트 복구 + 멤버 초기화
+    Object.entries(data.teams || {}).forEach(([tk]) => {
+      upd[`rooms/${ROOM}/teams/${tk}/points`]  = initPts;
+      upd[`rooms/${ROOM}/teams/${tk}/members`] = [];
+    });
+
+    // 선수 assignedTo 초기화
+    Object.entries(data.players || {}).forEach(([pid]) => {
+      upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = null;
+    });
+
+    // 경매 상태 초기화
+    const ROLE_O  = { '딜러':0,'탱커':1,'힐러':2,'유동':3 };
+    const GRADE_O = { '고':0,'저':1 };
+    const sorted  = Object.keys(data.players || {}).sort((a, b) => {
+      const pa = data.players[a], pb = data.players[b];
+      const rA = ROLE_O[pa?.role]??99, rB = ROLE_O[pb?.role]??99;
+      if (rA !== rB) return rA - rB;
+      return (GRADE_O[pa?.grade]??1) - (GRADE_O[pb?.grade]??1);
+    });
+    upd[`rooms/${ROOM}/auction/status`]        = 'waiting';
+    upd[`rooms/${ROOM}/auction/order`]         = sorted;
+    upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
+    upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+    upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+    upd[`rooms/${ROOM}/auction/timerEndsAt`]   = null;
+    upd[`rooms/${ROOM}/auction/log`]           = [];
+
+    await update(ref(window._db), upd);
+    showToast('✅ 경매 전체 초기화 완료');
+  }
+
+  async function forceFinish() {
+    if (!confirm('경매를 강제로 종료하겠습니까?')) return;
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status: 'finished', currentPlayer: null
+    });
+    showToast('✅ 경매 강제 종료됨');
+  }
+
+  // ── 토스트
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
