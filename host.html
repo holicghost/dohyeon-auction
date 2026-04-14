@@ -6,10 +6,67 @@
   <title>주최자 - OW 경매</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-    // ✅ Firebase 설정 붙여넣기
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      },
+      get:     (ref) => ref.get(),
+      set:     (ref, val) => ref.set(val),
+      remove:  (ref) => ref.remove()
+    };
+    window._remove = (ref) => ref.remove();
+    firebase.auth().signInAnonymously()
+      .then(() => { window._authReady = true; })
+      .catch(e => { console.warn('익명 로그인 실패:', e); window._authReady = true; });
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    firebase.auth().signInAnonymously().catch(e => console.warn('익명 로그인 실패:', e));
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      },
+      get:     (ref) => ref.get(),
+      set:     (ref, val) => ref.set(val),
+      remove:  (ref) => ref.remove()
+    };
+    window._remove = (ref) => ref.remove();
+  </script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
       authDomain: "dohyeon-4e4e0.firebaseapp.com",
@@ -20,9 +77,13 @@
       appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6",
       measurementId: "G-SKKD38LT76"
     };
-    const app = initializeApp(firebaseConfig);
-    window._db = getDatabase(app);
-    window._dbFns = { ref, onValue, update };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => { if (typeof val === 'undefined') return refOrDb; const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb; return r.update(val); }
+    };
   </script>
   <style>
     :root{
@@ -349,7 +410,29 @@
         <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
         <h3 style="font-size:1.4rem;margin-bottom:8px;">경매 완료!</h3>
         <p style="color:var(--muted);margin-bottom:24px;">모든 선수 경매가 끝났습니다</p>
+        <div id="final-unsold-summary" style="display:none;background:rgba(239,68,68,.08);
+          border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px 16px;
+          margin-bottom:20px;text-align:left;">
+          <div style="font-size:.82rem;color:#f87171;font-weight:700;margin-bottom:8px;">
+            ❌ 최종 유찰 선수
+          </div>
+          <div id="final-unsold-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
         <button class="btn btn-ghost" onclick="location.href='index.html'">홈으로</button>
+      </div>
+
+      <!-- 유찰 재경매 라운드 -->
+      <div id="unsold-round-screen" style="display:none;padding:20px 0;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:2rem;margin-bottom:8px;">🔄</div>
+          <h3 style="font-size:1.3rem;color:var(--accent);margin-bottom:6px;">유찰 재경매 라운드</h3>
+          <p style="color:var(--muted);font-size:.85rem;">낙찰되지 않은 선수들을 모아 재경매합니다</p>
+        </div>
+        <div id="unsold-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="startUnsoldAuction()">🏁 재경매 시작</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="skipUnsoldRound()">건너뛰고 종료</button>
+        </div>
       </div>
     </div>
   </div>
@@ -506,10 +589,12 @@
     document.getElementById('auction-screen').style.display          = (st==='preview'||st==='bidding') ? '' : 'none';
     document.getElementById('category-break-screen').style.display   = st==='category-break' ? '' : 'none';
     document.getElementById('finished-screen').style.display         = st==='finished' ? '' : 'none';
+    document.getElementById('unsold-round-screen').style.display      = st==='unsold-round' ? '' : 'none';
     if (st==='waiting') renderLotterySlots();
     if (st==='preview'||st==='bidding') renderAuction();
     if (st==='category-break') renderCategoryBreak();
-    if (st==='finished') stopTimer();
+    if (st==='unsold-round') renderUnsoldRound();
+    if (st==='finished') { stopTimer(); renderFinalUnsoldSummary(); }
     renderTeams(); renderQueue(); renderLinks(); renderLog();
   }
 
@@ -669,8 +754,10 @@
       await nextPlayer(upd);
       showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
     } else {
-      // 입찰자 없음 → 자동 유찰
-      await nextPlayer({});
+      // 입찰자 없음 → 자동 유찰 (__unsold__ 마킹)
+      const noPid = auction.currentPlayer;
+      const noExtra = noPid ? { [`rooms/${ROOM}/players/${noPid}/assignedTo`]: '__unsold__' } : {};
+      await nextPlayer(noExtra);
       showToast('⏰ 시간 초과 — 자동 유찰');
     }
     transLock = false;
@@ -718,10 +805,13 @@
     transLock = false;
   }
 
-  // ── 유찰
+  // ── 유찰 (assignedTo='__unsold__' 로 마킹)
   async function confirmNobid() {
     if (!confirm('유찰 처리하시겠습니까?')) return;
-    await nextPlayer({}); showToast('유찰 처리됨');
+    const pid = roomData.auction.currentPlayer;
+    const extra = pid ? { [`rooms/${ROOM}/players/${pid}/assignedTo`]: '__unsold__' } : {};
+    await nextPlayer(extra);
+    showToast('유찰 처리됨');
   }
 
   // ── 일시정지 / 재개
@@ -769,12 +859,30 @@
   async function nextPlayer(extra={}) {
     const { ref, update } = window._dbFns;
     const { auction, players } = roomData;
+    // 아직 처리 안 된 선수 (낙찰도 유찰도 아닌)
     const rem = auction.order.filter(pid => pid!==auction.currentPlayer && players[pid]?.assignedTo==null);
     const upd = {...extra};
 
     if (rem.length === 0) {
-      upd[`rooms/${ROOM}/auction/status`] = 'finished';
-      upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
+      // 재경매 라운드 중이면 그냥 finished (무한루프 방지)
+      const isUnsoldRound = roomData.auction?.isUnsoldRound || false;
+      if (!isUnsoldRound) {
+        // 일반 라운드 종료 → 유찰 선수 있으면 유찰 재경매 라운드로
+        const unsoldPids = Object.keys(players).filter(pid => players[pid]?.assignedTo === '__unsold__');
+        if (unsoldPids.length > 0) {
+          upd[`rooms/${ROOM}/auction/status`]         = 'unsold-round';
+          upd[`rooms/${ROOM}/auction/unsoldOrder`]    = unsoldPids;
+          upd[`rooms/${ROOM}/auction/currentPlayer`]  = null;
+        } else {
+          upd[`rooms/${ROOM}/auction/status`] = 'finished';
+          upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
+        }
+      } else {
+        // 재경매 라운드에서도 다 소진 → 완전 종료
+        upd[`rooms/${ROOM}/auction/status`]        = 'finished';
+        upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
+        upd[`rooms/${ROOM}/auction/isUnsoldRound`] = null;
+      }
     } else {
       // 카테고리 전환 감지: 현재 선수 등급 vs 다음 선수 등급
       const curGrade  = players[auction.currentPlayer]?.grade || '고';
@@ -812,6 +920,112 @@
     document.getElementById('cb-subtitle').textContent = `${gradeLabel[from]} 선수 경매가 모두 끝났습니다`;
     document.getElementById('cb-next').textContent     = `다음: ${gradeLabel[to]} 경매`;
   }
+
+  // ── 유찰 재경매 라운드 렌더
+  function renderUnsoldRound() {
+    stopTimer();
+    const { auction, players } = roomData;
+    const unsoldPids = auction.unsoldOrder || [];
+    const listEl = document.getElementById('unsold-list');
+    if (!listEl) return;
+
+    if (unsoldPids.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">유찰된 선수가 없습니다</div>';
+      return;
+    }
+
+    listEl.innerHTML = unsoldPids.map((pid, i) => {
+      const p = players[pid];
+      if (!p) return '';
+      const roleColor = {'딜러':'#f59e0b','탱커':'#3b82f6','힐러':'#22c55e'}[p.role] || '#64748b';
+      const gradeColor = p.grade === '고' ? '#ef4444' : '#3b82f6';
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+        padding:12px 16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);
+          display:flex;align-items:center;justify-content:center;font-size:.8rem;
+          color:var(--muted);flex-shrink:0;">${i+1}</div>
+        ${p.photo ? `<div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;">
+          <img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" /></div>` :
+          `<div style="width:44px;height:44px;border-radius:8px;background:var(--surface);
+          border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+          font-size:1.3rem;flex-shrink:0;">👤</div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.95rem;">${p.name}</div>
+          <div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;">
+            <span style="font-size:.72rem;padding:2px 7px;border-radius:4px;
+              background:rgba(255,255,255,.06);color:${roleColor};">${p.role}</span>
+            <span style="font-size:.72rem;padding:2px 7px;border-radius:4px;
+              background:rgba(255,255,255,.06);color:${gradeColor};">${p.grade}티어</span>
+            <span style="font-size:.72rem;color:var(--muted);">${p.curTier || ''}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── 유찰 재경매 시작
+  async function startUnsoldAuction() {
+    const { ref, update } = window._dbFns;
+    const { auction, players } = roomData;
+    const unsoldPids = (auction.unsoldOrder || []).filter(pid => players[pid]?.assignedTo === '__unsold__');
+
+    if (unsoldPids.length === 0) {
+      showToast('재경매할 선수가 없습니다');
+      return;
+    }
+
+    // 유찰 선수들 assignedTo 초기화 (null로 되돌려 재경매 가능하게)
+    const upd = {};
+    unsoldPids.forEach(pid => {
+      upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = null;
+    });
+
+    upd[`rooms/${ROOM}/auction/status`]        = 'preview';
+    upd[`rooms/${ROOM}/auction/order`]         = unsoldPids;
+    upd[`rooms/${ROOM}/auction/unsoldOrder`]   = null;
+    upd[`rooms/${ROOM}/auction/currentPlayer`] = unsoldPids[0];
+    upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+    upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+    upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + (roomData.meta?.timerSec || 10) * 1000;
+    upd[`rooms/${ROOM}/auction/isUnsoldRound`] = true;
+
+    await update(ref(window._db), upd);
+    showToast('🔄 유찰 재경매 라운드 시작!');
+  }
+
+  // ── 유찰 라운드 건너뛰고 바로 종료
+  async function skipUnsoldRound() {
+    if (!confirm('유찰된 선수들을 모두 제외하고 경매를 종료하시겠습니까?')) return;
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db), {
+      [`rooms/${ROOM}/auction/status`]:        'finished',
+      [`rooms/${ROOM}/auction/currentPlayer`]: null,
+      [`rooms/${ROOM}/auction/unsoldOrder`]:   null
+    });
+    showToast('경매 종료');
+  }
+
+  // ── 최종 유찰 선수 요약 렌더
+  function renderFinalUnsoldSummary() {
+    const { players } = roomData || {};
+    if (!players) return;
+    const summaryEl  = document.getElementById('final-unsold-summary');
+    const listEl     = document.getElementById('final-unsold-list');
+    if (!summaryEl || !listEl) return;
+
+    const unsoldList = Object.values(players).filter(p => p.assignedTo === '__unsold__');
+    if (unsoldList.length === 0) {
+      summaryEl.style.display = 'none';
+      return;
+    }
+    summaryEl.style.display = '';
+    listEl.innerHTML = unsoldList.map(p =>
+      `<div style="font-size:.82rem;color:#fca5a5;padding:2px 0;">
+        • ${p.name} <span style="color:#64748b;">(${p.role} / ${p.grade}티어 / ${p.curTier||''})</span>
+      </div>`
+    ).join('');
+  }
+
 
   // ── 다음 카테고리 이어서 진행
   async function resumeNextCategory() {

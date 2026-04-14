@@ -6,9 +6,10 @@
   <title>관리자 패널 - 도현 유인원 컵</title>
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, get, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
       authDomain: "dohyeon-4e4e0.firebaseapp.com",
@@ -18,13 +19,75 @@
       messagingSenderId: "231075336771",
       appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
     };
-    const app = initializeApp(firebaseConfig);
-    window._db = getDatabase(app);
-    window._dbFns = { ref, onValue, update, get, set, remove };
-    window._remove = remove;
-    // Firebase 초기화 완료 신호
-    window._firebaseReady = true;
-    if (window._onFirebaseReady) window._onFirebaseReady();
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      },
+      get:     (ref) => ref.get(),
+      set:     (ref, val) => ref.set(val),
+      remove:  (ref) => ref.remove()
+    };
+    window._remove = (ref) => ref.remove();
+    firebase.auth().signInAnonymously()
+      .then(() => { window._authReady = true; })
+      .catch(e => { console.warn('익명 로그인 실패:', e); window._authReady = true; });
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    firebase.auth().signInAnonymously().catch(e => console.warn('익명 로그인 실패:', e));
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      },
+      get:     (ref) => ref.get(),
+      set:     (ref, val) => ref.set(val),
+      remove:  (ref) => ref.remove()
+    };
+    window._remove = (ref) => ref.remove();
+  </script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const _firebaseDB = firebase.database();
+    window._db = _firebaseDB;
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => { if (typeof val === 'undefined') return refOrDb; const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb; return r.update(val); },
+      get:     (ref) => ref.get(),
+      set:     (ref, val) => ref.set(val),
+      remove:  (ref) => ref.remove()
+    };
+    window._remove = (ref) => ref.remove();
   </script>
   <style>
     :root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;

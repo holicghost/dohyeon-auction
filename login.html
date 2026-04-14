@@ -8,9 +8,10 @@
   <meta property="og:description" content="By ONSIDE COMPANY" />
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
       authDomain: "dohyeon-4e4e0.firebaseapp.com",
@@ -20,10 +21,69 @@
       messagingSenderId: "231075336771",
       appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
     };
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
-    window._db = db;
-    window._dbFns = { ref, set, get };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:    (db, path) => db.ref(path),
+      set:    (ref, val) => ref.set(val),
+      get:    (ref) => ref.get(),
+      update: (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      }
+    };
+    window._remove = (ref) => ref.remove();
+    // 익명 로그인: auth != null 조건 충족 (Firebase Rules 통과용)
+    firebase.auth().signInAnonymously()
+      .then(() => { window._authReady = true; })
+      .catch(e => { console.warn('익명 로그인 실패:', e); window._authReady = true; });
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    // 익명 로그인: auth != null 조건을 만족시켜 Firebase Rules 통과
+    firebase.auth().signInAnonymously().catch(e => console.warn('익명 로그인 실패:', e));
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:    (db, path) => db.ref(path),
+      set:    (ref, val) => ref.set(val),
+      get:    (ref) => ref.get(),
+      update: (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      }
+    };
+    window._remove = (ref) => ref.remove();
+  </script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const _firebaseDB = firebase.database();
+    window._db = _firebaseDB;
+    window._dbFns = {
+      ref: (db, path) => db.ref(path),
+      set: (ref, val) => ref.set(val),
+      get: (ref) => ref.get()
+    };
   </script>
   <style>
     :root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
