@@ -231,6 +231,12 @@
     <div class="card">
       <div class="card-title">팀장 정보 수정 <span class="badge">저장 즉시 반영</span></div>
       <div class="leader-cards" id="leader-cards"></div>
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
+        <input type="text" id="new-leader-name" placeholder="새 팀장 닉네임"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+          color:var(--text);padding:8px 12px;font-size:.88rem;font-family:inherit;outline:none;" />
+        <button class="btn btn-primary btn-sm" onclick="addLeader()">+ 팀장 추가</button>
+      </div>
     </div>
   </div>
 
@@ -243,6 +249,7 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>사진</th>
               <th>닉네임</th>
               <th>포지션</th>
               <th>등급</th>
@@ -254,6 +261,25 @@
           </thead>
           <tbody id="player-tbody"></tbody>
         </table>
+      </div>
+      <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+        <div style="font-size:.78rem;color:var(--accent);font-weight:700;margin-bottom:10px;">+ 선수 추가</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><label>닉네임 *</label><input type="text" id="new-p-name" placeholder="닉네임" /></div>
+          <div><label>포지션</label>
+            <select id="new-p-role">
+              <option>딜러</option><option>탱커</option><option>힐러</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><label>등급</label>
+            <select id="new-p-grade"><option>고</option><option>저</option></select>
+          </div>
+          <div><label>현재 티어</label><select id="new-p-cur"></select></div>
+          <div><label>역대 최고</label><select id="new-p-peak"></select></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addPlayer()">+ 선수 추가</button>
       </div>
     </div>
   </div>
@@ -335,6 +361,14 @@
 
   // ── 비밀번호 체크
   function getAdminPw() { return localStorage.getItem(ADMIN_PW_KEY) || DEFAULT_PW; }
+
+  // 선수 추가 폼 티어 옵션 채우기
+  function initNewPlayerForm() {
+    const tierHtml = TIERS.map(t => `<option>${t}</option>`).join('');
+    document.getElementById('new-p-cur').innerHTML  = tierHtml;
+    document.getElementById('new-p-peak').innerHTML = tierHtml;
+  }
+  initNewPlayerForm();
 
   function checkPw() {
     const val = document.getElementById('pw-input').value;
@@ -474,24 +508,22 @@
       const tierOpts   = TIERS.map(t => `<option${t===p.curTier?' selected':''}>${t}</option>`).join('');
       const peakOpts   = TIERS.map(t => `<option${t===p.peakTier?' selected':''}>${t}</option>`).join('');
       const gradeOpts  = ['고','저'].map(g => `<option${g===p.grade?' selected':''}>${g}</option>`).join('');
-      const photoThumb = p.photo
-        ? `<img src="${p.photo}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;margin-right:4px;vertical-align:middle;" />`
-        : '';
+      const photoEl    = p.photo
+        ? `<img id="pphoto-img-${pid}" src="${p.photo}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;cursor:pointer;border:1px solid var(--border);" onclick="triggerPlayerPhoto('${pid}')" title="클릭해서 변경" />`
+        : `<div id="pphoto-img-${pid}" onclick="triggerPlayerPhoto('${pid}')" title="클릭해서 추가"
+            style="width:32px;height:32px;border-radius:5px;background:var(--surface);border:1px dashed var(--border);
+            display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;">📷</div>`;
 
       return `<tr class="${isAssigned?'assigned':''}">
         <td style="color:var(--muted);font-size:.72rem;">${i+1}</td>
         <td>
-          <div style="display:flex;align-items:center;gap:4px;">
-            ${photoThumb}
-            <input class="inline-input" id="pn-${pid}" value="${p.name||''}" style="width:100px;" />
-          </div>
+          ${photoEl}
+          <input type="file" id="pphoto-file-${pid}" accept="image/*" style="display:none"
+            onchange="handlePlayerPhotoChange('${pid}',this)" />
         </td>
+        <td><input class="inline-input" id="pn-${pid}" value="${p.name||''}" style="width:100px;" /></td>
         <td><select class="inline-select" id="pr-${pid}">${roleOpts}</select></td>
-        <td>
-          <select class="inline-select" id="pg-${pid}" style="width:52px;">
-            ${gradeOpts}
-          </select>
-        </td>
+        <td><select class="inline-select" id="pg-${pid}" style="width:52px;">${gradeOpts}</select></td>
         <td><select class="inline-select" id="pc-${pid}" style="width:80px;">${tierOpts}</select></td>
         <td><select class="inline-select" id="pp-${pid}" style="width:80px;">${peakOpts}</select></td>
         <td>
@@ -504,6 +536,77 @@
         </td>
       </tr>`;
     }).join('');
+  }
+
+  function triggerPlayerPhoto(pid) {
+    document.getElementById(`pphoto-file-${pid}`).click();
+  }
+
+  function handlePlayerPhotoChange(pid, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const dataUrl = e.target.result;
+      const imgEl = document.getElementById(`pphoto-img-${pid}`);
+      imgEl.outerHTML = `<img id="pphoto-img-${pid}" src="${dataUrl}"
+        style="width:32px;height:32px;border-radius:5px;object-fit:cover;cursor:pointer;border:1px solid var(--border);"
+        onclick="triggerPlayerPhoto('${pid}')" title="클릭해서 변경" />`;
+      const { ref, update } = window._dbFns;
+      await update(ref(window._db, `rooms/${ROOM}/players/${pid}`), { photo: dataUrl });
+      showToast('✅ 선수 사진 저장됨');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function addLeader() {
+    const name = document.getElementById('new-leader-name').value.trim();
+    if (!name) { showToast('팀장 닉네임을 입력해주세요'); return; }
+    const { ref, update, get } = window._dbFns;
+    const snap = await get(ref(window._db, `rooms/${ROOM}/teams`));
+    const teams = snap.val() || {};
+    const idx = Object.keys(teams).length;
+    const newKey = `team_${idx}`;
+    const initPts = roomData.meta.points || 1000;
+    const newToken = Math.random().toString(36).substring(2, 10);
+    const upd = {};
+    upd[`rooms/${ROOM}/teams/${newKey}`] = {
+      name, points: initPts, members: [], photo: '', leaderToken: newToken
+    };
+    await update(ref(window._db), upd);
+    document.getElementById('new-leader-name').value = '';
+    showToast(`✅ 팀장 ${name} 추가됨`);
+  }
+
+  async function addPlayer() {
+    const name = document.getElementById('new-p-name').value.trim();
+    if (!name) { showToast('닉네임을 입력해주세요'); return; }
+    const { ref, update, get } = window._dbFns;
+    const snap = await get(ref(window._db, `rooms/${ROOM}/players`));
+    const players = snap.val() || {};
+    const idx = Object.keys(players).length;
+    const newKey = `player_${idx}_${Date.now()}`;
+    const newPlayer = {
+      name,
+      role:       document.getElementById('new-p-role').value,
+      grade:      document.getElementById('new-p-grade').value,
+      curTier:    document.getElementById('new-p-cur').value,
+      peakTier:   document.getElementById('new-p-peak').value,
+      prevTier:   '언랭',
+      hero1:'', hero2:'', hero3:'',
+      style:'', intro:'', photo:'',
+      assignedTo: null
+    };
+    const upd = {};
+    upd[`rooms/${ROOM}/players/${newKey}`] = newPlayer;
+    // 경매 순서에도 추가
+    const auctSnap = await get(ref(window._db, `rooms/${ROOM}/auction/order`));
+    const order = auctSnap.val() || [];
+    order.push(newKey);
+    upd[`rooms/${ROOM}/auction/order`] = order;
+    await update(ref(window._db), upd);
+    document.getElementById('new-p-name').value = '';
+    showToast(`✅ 선수 ${name} 추가됨`);
   }
 
   async function savePlayer(pid) {
