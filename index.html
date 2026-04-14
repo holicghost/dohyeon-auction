@@ -16,7 +16,32 @@
   <meta name="twitter:description" content="By ONSIDE COMPANY" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:    (db, path) => db.ref(path),
+      set:    (ref, val) => ref.set(val),
+      get:    (ref) => ref.get(),
+      update: (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      }
+    };
+    window._remove = (ref) => ref.remove();
+  </script>
   <style>
     :root {
       --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e3a5f;
@@ -108,36 +133,6 @@
       transition:opacity .3s;z-index:999;}
     .toast.show{opacity:1;}
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
-      authDomain: "dohyeon-4e4e0.firebaseapp.com",
-      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "dohyeon-4e4e0",
-      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
-      messagingSenderId: "231075336771",
-      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
-    };
-    firebase.initializeApp(firebaseConfig);
-    window._db = firebase.database();
-    window._dbFns = {
-      ref:    (db, path) => db.ref(path),
-      set:    (ref, val) => ref.set(val),
-      get:    (ref) => ref.get(),
-      update: (refOrDb, val) => {
-        if (typeof val === 'undefined') return refOrDb;
-        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
-        return r.update(val);
-      }
-    };
-    window._remove = (ref) => ref.remove();
-    firebase.auth().signInAnonymously()
-      .then(() => { window._authReady = true; })
-      .catch(e => { console.warn('익명 로그인 실패:', e); window._authReady = true; });
-  </script>
 </head>
 <body>
 
@@ -147,31 +142,14 @@
 </div>
 <p class="sub">오버워치 모의 경매 시스템</p>
 
-<!-- 로그인 사용자 표시 -->
-<div id="user-bar" style="display:none;width:100%;max-width:580px;
-  align-items:center;justify-content:space-between;
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:8px 14px;margin-bottom:12px;font-size:.82rem;">
-  <span>👤 <span id="user-name-disp" style="color:var(--accent);font-weight:700;"></span> 님</span>
-  <button onclick="doLogout()" style="background:none;border:1px solid var(--border);border-radius:6px;
-    color:var(--muted);padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:inherit;">로그아웃</button>
-</div>
-
 <!-- 메인 선택 화면 -->
 <div id="main-select" class="card" style="max-width:580px;width:100%;">
   <div style="display:flex;flex-direction:column;gap:12px;">
     <button class="btn btn-primary" onclick="showSection('create')" style="font-size:1rem;padding:16px;">
       🏆 새로운 방 생성하기
     </button>
-    <button class="btn btn-sec" id="myrooms-main-btn" onclick="showSection('myrooms')" style="font-size:1rem;padding:16px;border-color:var(--accent2);color:var(--accent2);display:none;">
-      📋 내가 만든 방 수정하기
-    </button>
     <button class="btn btn-sec" onclick="showSection('join')" style="font-size:1rem;padding:16px;">
       🔗 기존 방 입장하기
-    </button>
-    <button class="btn btn-sec" onclick="showSection('users')" id="users-main-btn"
-      style="font-size:1rem;padding:16px;border-color:#22c55e;color:#22c55e;display:none;">
-      👥 이용자 관리
     </button>
     <button class="btn btn-sec" onclick="showSection('admin')" id="admin-main-btn"
       style="font-size:1rem;padding:16px;border-color:var(--accent);color:var(--accent);">
@@ -219,7 +197,7 @@
     </p>
     <div id="players-list"></div>
     <button class="add-btn" onclick="addPlayer()">+ 선수 수동 추가</button>
-    <div id="save-btns" style="display:flex;gap:8px;margin-bottom:12px;margin-top:4px;">
+    <div id="save-btns" style="display:none;" style="display:flex;gap:8px;margin-bottom:12px;margin-top:4px;">
       <button class="btn btn-ghost" onclick="saveFormData()" style="flex:1;font-size:.85rem;">💾 임시저장</button>
       <button class="btn btn-ghost" onclick="openDraftModal()" style="flex:1;font-size:.85rem;">📂 저장 목록</button>
     </div>
@@ -241,88 +219,10 @@
   </div>
 </div>
 
-<!-- 이용자 관리 -->
-<div id="section-users" style="display:none;width:100%;max-width:580px;">
-  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h2 style="font-size:1.1rem;margin:0;">👥 이용자 관리</h2>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <input id="user-search" type="text" placeholder="이름 / 아이디 검색"
-          oninput="filterUsers()"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;
-            color:var(--text);padding:7px 12px;font-size:.82rem;font-family:inherit;outline:none;width:160px;" />
-        <button onclick="loadUsersList()" style="background:none;border:1px solid var(--border);
-          border-radius:6px;color:var(--muted);padding:6px 12px;font-size:.76rem;cursor:pointer;font-family:inherit;">
-          🔄
-        </button>
-      </div>
-    </div>
-    <!-- 요약 통계 -->
-    <div id="users-stats" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
-    <!-- 이용자 목록 -->
-    <div id="users-list-main" style="display:flex;flex-direction:column;gap:8px;">
-      <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">불러오는 중...</div>
-    </div>
-  </div>
+
 </div>
 
-<!-- 내 방 수정 -->
-<div id="section-myrooms" style="display:none;width:100%;max-width:580px;">
-  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
-  <div class="card">
-    <h2 style="margin-bottom:16px;">📋 내가 만든 방 수정하기</h2>
-    <div class="fg" style="margin-bottom:6px;">
-      <label>방 선택</label>
-      <select id="myroom-select" style="width:100%;background:var(--surface2);border:1px solid var(--border);
-        border-radius:8px;color:var(--text);padding:11px 14px;font-size:.95rem;font-family:inherit;outline:none;">
-        <option value="">-- 방을 선택하세요 --</option>
-      </select>
-    </div>
-    <div id="myroom-info" style="display:none;background:var(--surface2);border:1px solid var(--border);
-      border-radius:8px;padding:12px 14px;font-size:.8rem;color:var(--muted);margin-bottom:10px;">
-    </div>
-    <button class="btn btn-primary" onclick="loadMyRoom()" style="margin-bottom:0;">
-      ✏️ 선택한 방 수정하기
-    </button>
-  </div>
-</div>
 
-<!-- 기존 방 참여 -->
-<div id="section-join" style="display:none;width:100%;max-width:580px;">
-  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
-  <div class="card">
-    <h2>🔗 기존 방 참여</h2>
-    <div class="fg">
-      <label>방 코드 입력</label>
-      <input type="text" id="join-code" placeholder="예: ABC123"
-        style="text-transform:uppercase;letter-spacing:3px;font-size:1.2rem;text-align:center;" />
-    </div>
-    <button class="btn btn-sec" onclick="joinRoom()">입장하기 →</button>
-  </div>
-</div>
-
-<!-- 관리 페이지 -->
-<div id="section-admin" style="display:none;width:100%;max-width:580px;">
-  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
-  <div class="card">
-    <h2>⚙ 관리자 패널</h2>
-    <div id="admin-pw-section">
-      <div class="fg">
-        <input type="password" id="admin-pw-input" placeholder="관리자 비밀번호"
-          style="font-size:1.1rem;text-align:center;letter-spacing:3px;"
-          onkeydown="if(event.key==='Enter')checkAdminPw()" />
-      </div>
-      <button class="btn btn-sec" onclick="checkAdminPw()" style="border-color:var(--accent);color:var(--accent);">⚙ 확인 →</button>
-    </div>
-    <div id="admin-room-section" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:.8rem;color:var(--muted);">열려있는 방 목록</span>
-        <button onclick="loadRooms()" style="background:none;border:none;color:var(--accent2);font-size:.78rem;cursor:pointer;font-family:inherit;">🔄 새로고침</button>
-      </div>
-      <div id="admin-room-list"></div>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -725,8 +625,8 @@
 
     const roomData = {
       meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now(),
-              createdBy: window._currentUser?.id || 'unknown',
-              createdByName: window._currentUser?.name || '알 수 없음' },
+              createdBy: 'admin',
+              createdByName: '관리자' },
       teams,
       players: playersObj,
       auction: {
@@ -837,15 +737,15 @@
   // ── 폼 전체 저장
   // ── Firebase 다중 임시저장 ──────────────────────────────────────────
   function _draftsRef() {
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     if (!uid || !window._db || !window._dbFns) return null;
     return window._dbFns.ref(window._db, `drafts/${uid}`);
   }
 
   async function saveFormData() {
-    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    if (false) { showToast('비회원은 임시저장이 불가합니다'); return; }
     if (!window._db || !window._dbFns) { showToast('Firebase 연결 중입니다. 잠시 후 다시 시도해주세요'); return; }
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const savedAt = Date.now();
     const draftId = `draft_${savedAt}`;
     const titleVal = document.getElementById('title').value.trim() || '제목 없음';
@@ -884,8 +784,8 @@
   }
 
   function checkSavedData() {
-    if (window._currentUser?.guest || !window._db || !window._dbFns) return;
-    const uid = window._currentUser?.id;
+    if (false || !window._db || !window._dbFns) return;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     get(ref(window._db, `drafts/${uid}`)).then(snap => {
       const info = document.getElementById('save-info');
@@ -899,7 +799,7 @@
 
   // ── 임시저장 모달 ──────────────────────────────────────────────────
   function openDraftModal() {
-    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    if (false) { showToast('비회원은 임시저장이 불가합니다'); return; }
     document.getElementById('draft-modal').style.display = '';
     renderDraftList();
   }
@@ -914,7 +814,7 @@
       area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">Firebase 연결 중...</div>';
       return;
     }
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}`));
@@ -950,7 +850,7 @@
 
   async function loadDraft(draftId) {
     if (!confirm('저장된 내역을 불러오면 현재 입력 내용이 초기화됩니다. 계속할까요?')) return;
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}/${draftId}`));
@@ -1007,7 +907,7 @@
 
   async function deleteDraft(draftId) {
     if (!confirm('이 임시저장을 삭제할까요?')) return;
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     try {
       await window._remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
       showToast('삭제 완료');
@@ -1036,7 +936,7 @@
 
   // ── 내 방 목록 불러오기
   async function loadMyRoomList() {
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     if (!uid) return;
     const sel = document.getElementById('myroom-select');
     sel.innerHTML = '<option value="">불러오는 중...</option>';
@@ -1410,8 +1310,8 @@
         [`rooms/${code}/meta`]: { title, teamCount, membersPerTeam, points, timerSec, minBid,
           createdAt: createdAtSnap.val() || Date.now(),
           updatedAt: Date.now(),
-          createdBy: window._currentUser?.id || 'unknown',
-          createdByName: window._currentUser?.name || '알 수 없음' },
+          createdBy: 'admin',
+          createdByName: '관리자' },
         [`rooms/${code}/teams`]:   teams,
         [`rooms/${code}/players`]: playersObj,
         [`rooms/${code}/auction`]: {
@@ -1459,70 +1359,9 @@
   // 초기화 (섹션은 메인 선택에서 시작)
   // renderLeaders/autoGeneratePlayers 는 showSection('create') 시 호출됨
 
-  // ── 로그인 체크 + 비회원 지원
-  (function() {
-    const user = sessionStorage.getItem('dohyeon_user');
-    // 비회원 세션도 허용 (guest 플래그)
-    if (!user) { location.href = 'login.html'; return; }
-    const u = JSON.parse(user);
-    const bar = document.getElementById('user-bar');
-    const nameEl = document.getElementById('user-name-disp');
-    if (bar) bar.style.display = 'flex';
-    if (nameEl) {
-      if (u.guest) {
-        nameEl.innerHTML = `비회원 <span style="font-size:.7rem;color:var(--muted);">(임시저장 불가)</span>`;
-        // 비회원은 임시저장 버튼 숨김
-        const saveBtns = document.getElementById('save-btns');
-        if (saveBtns) saveBtns.style.display = 'none';
-      } else {
-        nameEl.textContent = u.name;
-        if (u.role === 'admin') {
-          nameEl.innerHTML = `${u.name} <span style="font-size:.7rem;padding:2px 7px;border-radius:8px;
-            background:rgba(245,158,11,.2);color:var(--accent);border:1px solid var(--accent);
-            font-weight:700;margin-left:4px;">👑 관리자</span>`;
-          document.getElementById('admin-pw-section').style.display = 'none';
-          const roomSec = document.getElementById('admin-room-section');
-          if (roomSec) roomSec.style.display = '';
-        }
-        // role 없으면 Firebase에서 확인
-        if (!u.role) {
-          window.addEventListener('load', () => {
-            if (!window._dbFns) return;
-            const { ref, get } = window._dbFns;
-            get(ref(window._db, `users/${u.id}/role`)).then(snap => {
-              if (snap.exists() && snap.val() === 'admin') {
-                u.role = 'admin';
-                sessionStorage.setItem('dohyeon_user', JSON.stringify(u));
-                // 관리자 버튼 즉시 표시 (reload 없이)
-                const usersBtn = document.getElementById('users-main-btn');
-                if (usersBtn) usersBtn.style.display = '';
-                document.getElementById('admin-pw-section').style.display = 'none';
-                const roomSec = document.getElementById('admin-room-section');
-                if (roomSec) roomSec.style.display = '';
-              }
-            }).catch(()=>{});
-          });
-        }
-      }
-      // 로그인 회원이면 "내 방 수정하기" 버튼 표시
-      if (!u.guest) {
-        const myroomsBtn = document.getElementById('myrooms-main-btn');
-        if (myroomsBtn) myroomsBtn.style.display = '';
-      }
-      // 관리자이면 "이용자 관리" 버튼도 표시
-      if (u.role === 'admin') {
-        const usersBtn = document.getElementById('users-main-btn');
-        if (usersBtn) usersBtn.style.display = '';
-      }
-    }
-    window._currentUser = u;
-  })();
+  window._currentUser = { id: "admin", name: "관리자", role: "admin" };
 
-  function doLogout() {
-    if (confirm('로그아웃 하시겠습니까?')) {
-      sessionStorage.removeItem('dohyeon_user');
-      location.href = 'login.html';
-    }
+  
   }
 </script>
 </body>

@@ -6,7 +6,30 @@
   <title>주최자 - OW 경매</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&display=swap" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-  
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
+      authDomain: "dohyeon-4e4e0.firebaseapp.com",
+      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dohyeon-4e4e0",
+      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
+      messagingSenderId: "231075336771",
+      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._dbFns = {
+      ref:     (db, path) => db.ref(path),
+      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
+      update:  (refOrDb, val) => {
+        if (typeof val === 'undefined') return refOrDb;
+        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
+        return r.update(val);
+      }
+    };
+  </script>
   <style>
     :root{
       --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
@@ -208,34 +231,6 @@
     #init-screen{text-align:center;padding:28px 0;}
     #init-screen p{color:var(--muted);font-size:.85rem;margin-bottom:20px;}
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
-      authDomain: "dohyeon-4e4e0.firebaseapp.com",
-      databaseURL: "https://dohyeon-4e4e0-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "dohyeon-4e4e0",
-      storageBucket: "dohyeon-4e4e0.firebasestorage.app",
-      messagingSenderId: "231075336771",
-      appId: "1:231075336771:web:6a111f7c1aa9a2ae4a3af6"
-    };
-    firebase.initializeApp(firebaseConfig);
-    window._db = firebase.database();
-    window._dbFns = {
-      ref:     (db, path) => db.ref(path),
-      onValue: (ref, cb) => { ref.on('value', snap => cb(snap)); return () => ref.off('value'); },
-      update:  (refOrDb, val) => {
-        if (typeof val === 'undefined') return refOrDb;
-        const r = (refOrDb && typeof refOrDb.ref === 'function') ? refOrDb.ref() : refOrDb;
-        return r.update(val);
-      }
-    };
-    firebase.auth().signInAnonymously()
-      .then(() => { window._authReady = true; })
-      .catch(e => { console.warn('익명 로그인 실패:', e); window._authReady = true; });
-  </script>
 </head>
 <body>
 

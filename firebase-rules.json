@@ -1,65 +1,6 @@
 {
   "rules": {
-    "users": {
-      // 회원 목록 전체 읽기: 로그인/아이디찾기에서 DB 조회 필요
-      ".read": "auth != null",
-
-      "$uid": {
-        // 본인 데이터 읽기 또는 익명 로그인된 누구나 (커스텀 인증 구조)
-        ".read": "auth != null",
-
-        // 회원가입/정보수정: 익명 인증된 사용자 누구나 (커스텀 인증 구조)
-        ".write": "auth != null",
-
-        // role 필드: 누구나 수정 가능 (관리자 승격은 클라이언트 레벨에서 관리)
-        "role": {
-          ".write": "auth != null"
-        },
-
-        // withdrawn 필드
-        "withdrawn": {
-          ".write": "auth != null"
-        }
-      }
-    },
-
-    "rooms": {
-      "$roomId": {
-        // 방 읽기: 누구나 (참가자/관전자)
-        ".read": true,
-
-        // 방 생성/수정: 익명 인증된 사용자
-        ".write": "auth != null",
-
-        "auction": {
-          ".read": true,
-          ".write": "auth != null"
-        },
-
-        "teams": {
-          ".read": true,
-          ".write": "auth != null"
-        },
-
-        "players": {
-          ".read": true,
-          ".write": "auth != null"
-        },
-
-        "chat": {
-          ".read": true,
-          // 채팅은 누구나 (비로그인 관전자도 가능하도록)
-          ".write": true
-        }
-      }
-    },
-
-    "drafts": {
-      "$uid": {
-        // 임시저장: 익명 인증된 사용자 누구나 (커스텀 인증 구조상 uid 매칭 불가)
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    }
+    ".read": true,
+    ".write": true
   }
 }
