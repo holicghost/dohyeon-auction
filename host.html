@@ -68,31 +68,27 @@
     .
 
     .pc-top{display:flex;gap:16px;align-items:flex-start;margin-top:8px;}
-    .pc-photo{width:140px;height:140px;border-radius:12px;background:var(--surface2);
-      border:2px solid var(--border);flex-shrink:0;overflow:hidden;
-      display:flex;align-items:center;justify-content:center;font-size:3rem;}
+    .pc-photo{width:80px;height:80px;border-radius:10px;object-fit:cover;
+      background:var(--surface2);border:2px solid var(--border);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;font-size:2rem;}
     .pc-info{flex:1;min-width:0;}
-    /* 등급/포지션 배지 - 완전히 동일한 높이/크기 */
-    .pc-grade-badge, .pc-role-badge{
+    .pc-grade-badge{
       display:inline-flex;align-items:center;gap:4px;
-      padding:4px 11px;border-radius:5px;font-size:.75rem;font-weight:700;
-      line-height:1;height:24px;box-sizing:border-box;}
+      padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;
+      margin-bottom:6px;
+    }
     .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
     .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
-    .rb-딜러{background:rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316;}
-    .rb-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
-    .rb-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
-    .rb-유동{background:rgba(168,85,247,.2);color:#a855f7;border:1px solid #a855f7;}
     .
-    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.3rem;line-height:1.1;margin-bottom:7px;}
-    .pc-tiers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;}
+    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.2rem;line-height:1.1;margin-bottom:8px;}
+    .pc-tiers{display:flex;gap:12px;margin-bottom:8px;}
     .tier-item{display:flex;flex-direction:column;gap:2px;}
     .tier-label{font-size:.65rem;color:var(--muted);}
     .tier-val{font-size:.85rem;font-weight:700;color:var(--text);}
     .pc-heroes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
     .hero-tag{background:var(--surface2);border:1px solid var(--border);
       border-radius:6px;padding:3px 8px;font-size:.75rem;color:var(--text);}
-    .pc-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:.78rem;margin-bottom:6px;align-items:center;}
+    .pc-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.78rem;}
     .pc-meta-item{display:flex;flex-direction:column;gap:2px;}
     .pc-meta-label{font-size:.65rem;color:var(--muted);}
     .pc-meta-val{color:var(--text);}
@@ -131,7 +127,7 @@
 
     /* 영웅 아이콘 */
     .hero-icon-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-    .hero-icon{width:46px;height:46px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
+    .hero-icon{width:48px;height:48px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
       background:var(--surface2);flex-shrink:0;position:relative;}
     .hero-icon img{width:100%;height:100%;object-fit:cover;}
     .hero-icon-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);
@@ -181,8 +177,8 @@
     .team-slot.filled{background:rgba(0,0,0,.15);}
     .team-slot-photo{width:100%;height:100%;object-fit:cover;}
     .team-slot-num{font-size:.9rem;color:rgba(255,255,255,.25);font-weight:700;}
-    .team-slot-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);
-      font-size:.6rem;font-weight:700;text-align:center;padding:2px 3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .team-slot-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);
+      font-size:.48rem;text-align:center;padding:1px 2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .team-slot-grade{position:absolute;top:2px;left:2px;font-size:.55rem;line-height:1;}
 
     /* 팀 그리드 (레거시) */
@@ -219,17 +215,6 @@
     .lk-url{font-size:.75rem;color:var(--accent2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
     .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);
-    /* ── 포지션 전환 오버레이 */
-    .break-overlay{position:fixed;inset:0;z-index:500;background:rgba(10,14,26,.92);
-      backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;}
-    .break-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
-      padding:40px 48px;text-align:center;max-width:480px;width:90%;}
-    .break-title{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;color:var(--text);margin-bottom:6px;}
-    .break-sub{font-size:.9rem;color:var(--muted);margin-bottom:28px;}
-    .break-next{font-family:'Black Han Sans',sans-serif;font-size:1.3rem;color:var(--accent);margin-bottom:24px;}
-    .break-count{font-family:'Black Han Sans',sans-serif;font-size:5rem;line-height:1;margin-bottom:24px;transition:color .3s;}
-    .break-count.urgent{color:var(--danger);animation:bc-pulse .4s infinite;}
-    @keyframes bc-pulse{0%,100%{opacity:1}50%{opacity:.4}}
       border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;
       font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;}
     .toast.show{opacity:1;}
@@ -260,20 +245,16 @@
 <!-- 시작 전 (레이아웃 밖) -->
 <div id="init-wrap" class="card" style="margin-bottom:14px;">
   <div id="init-screen">
-    <h3 style="margin-bottom:8px;font-size:1.6rem;">경매 준비 완료</h3>
-    <p id="lottery-status-msg" style="margin-bottom:20px;color:var(--muted);font-size:1rem;">시작 버튼을 누르면 팀장 순서를 추첨합니다</p>
+    <h3 style="margin-bottom:8px;">경매 준비 완료</h3>
+    <p id="lottery-status-msg" style="margin-bottom:20px;color:var(--muted);">시작 버튼을 누르면 팀장 순서를 추첨합니다</p>
 
     <!-- 추첨 결과 슬롯 -->
     <div id="lottery-slots" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:90px;align-items:center;">
       <div style="color:var(--muted);font-size:.85rem;">데이터 로딩 중...</div>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" id="start-btn" onclick="startWithLottery()">🎲 팀장 순서 추첨</button>
-      <button class="btn btn-ghost" id="retry-btn" onclick="retryLottery()"
-        style="display:none;">🔄 다시 뽑기</button>
-      <button class="btn btn-primary" id="begin-auction-btn" onclick="startAuctionWithCountdown()"
-        style="display:none;background:linear-gradient(135deg,#22c55e,#16a34a);">🏁 경매 시작!</button>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-primary" id="start-btn" onclick="startWithLottery()">🏁 경매 시작</button>
     </div>
   </div>
 </div>
@@ -308,18 +289,13 @@
         <div class="player-card" id="player-card">
           <div class="grade-banner grade-고" id="grade-banner"></div>
           <div class="pc-top">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">
-              <div class="pc-photo" id="pc-photo">👤</div>
-              <div class="hero-icon-wrap" id="pc-heroes" style="justify-content:center;margin-bottom:0;"></div>
-            </div>
+            <div class="pc-photo" id="pc-photo">👤</div>
             <div class="pc-info">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
-                <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
-                <div class="pc-role-badge" id="pc-role-badge"></div>
-              </div>
+              <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어 매물</div>
               <div class="pc-name" id="pc-name">-</div>
-              <div id="pc-meta" style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;"></div>
               <div class="pc-tiers" id="pc-tiers"></div>
+              <div class="pc-heroes" id="pc-heroes"></div>
+              <div class="pc-meta" id="pc-meta"></div>
             </div>
           </div>
           <div class="pc-intro" id="pc-intro" style="display:none;"></div>
@@ -345,7 +321,9 @@
 
           <div class="next-section" id="next-section" style="display:none;">
             <span class="next-label">NEXT</span>
+            <span class="next-grade-badge" id="next-grade-badge"></span>
             <span class="next-name" id="next-name">-</span>
+            <span class="next-role" id="next-role">-</span>
           </div>
         </div>
 
@@ -382,43 +360,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- 경매 시작 전 전체화면 카운트다운 -->
-<div id="start-countdown-overlay" style="display:none;position:fixed;inset:0;z-index:600;
-  background:rgba(10,14,26,.96);backdrop-filter:blur(10px);
-  display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
-  <div style="font-size:1.1rem;color:var(--muted);margin-bottom:16px;letter-spacing:2px;">잠시 후 경매가 시작됩니다</div>
-  <div id="start-count-num" style="font-family:'Black Han Sans',sans-serif;font-size:10rem;
-    line-height:1;color:var(--accent);transition:transform .15s,color .3s;"></div>
-  <div style="font-size:1rem;color:var(--muted);margin-top:16px;">초</div>
-  <button onclick="skipStartCountdown()"
-    style="margin-top:32px;padding:10px 28px;background:none;border:1px solid var(--border);
-    border-radius:10px;color:var(--muted);font-family:inherit;font-size:.85rem;cursor:pointer;">
-    ⏩ 바로 시작
-  </button>
-</div>
-
-<!-- 포지션 전환 대기 오버레이 -->
-<div class="break-overlay" id="break-overlay" style="display:none;">
-  <div class="break-card">
-    <div style="font-size:2.5rem;margin-bottom:12px;">⏸</div>
-    <div class="break-title" id="break-done-txt">고티어 딜러 경매 완료!</div>
-    <div class="break-sub" id="break-next-label">다음 포지션</div>
-    <div class="break-next" id="break-next-txt">고티어 탱커</div>
-    <div class="break-count" id="break-count">10</div>
-    <div style="font-size:.85rem;color:var(--muted);margin-bottom:20px;">초 뒤 경매가 시작됩니다</div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button id="break-pause-btn" onclick="toggleBreakPause()"
-        style="padding:10px 24px;border:none;border-radius:10px;font-family:inherit;font-weight:700;
-        font-size:.9rem;cursor:pointer;background:rgba(245,158,11,.15);
-        border:1px solid var(--accent);color:var(--accent);">⏸ 일시정지</button>
-      <button onclick="skipBreak()"
-        style="padding:10px 24px;border:1px solid var(--border);border-radius:10px;
-        font-family:inherit;font-weight:700;font-size:.9rem;cursor:pointer;
-        background:var(--surface2);color:var(--text);">⏩ 바로 시작</button>
-    </div>
-  </div>
-</div>
 <footer style="margin-top:12px;padding-bottom:12px;text-align:center;">
   <a href="https://www.onsidecompany.co.kr/" target="_blank" rel="noopener"
     style="color:#334155;font-size:.68rem;text-decoration:none;letter-spacing:.5px;line-height:1.8;">
@@ -472,51 +413,14 @@
     '라이프위버':  'lifeweaver',
     '주노':        'juno',
   };
-  const OW_HERO_PORTRAITS = {
-    '디바':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/df5a5532862d9292634fb3dc0e51a4705aa601de65e5e815513ccc663d84de56.png',
-    '라마트라':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/ddef7c9fb8ce4256e8508196b486f81950efe7aaa6cf27fec4668beb4cd15774.png',
-    '라인하르트':  'https://d15f34w2p8l1cc.cloudfront.net/overwatch/551fbe070c16fdfcc17f7f1de63af22c53e7d2f1340fc2f3172441504527bc4e.png',
-    '로드호그':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/89ddf07e4b619ed96169042e296a1b8856d102746f35add88284b44a9a5a6a03.png',
-    '마우가':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/33d39bb439c08975197fc52eff4874716839711b5356c4fdc174f9c24bac1d0e.png',
-    '시그마':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/a4c032fa466c9a6d9c6974747635d7ef910027f91cd58892af0c899db565f92d.png',
-    '오리사':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/a73958a28551f5254f3ab3f97c5f5f8d698a95c0b6a515d1a2b1caac169205a6.png',
-    '윈스턴':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/46a10db3aa908c590ddc4e7606376a88143d1f1306ecfbea043263040f9529a5.png',
-    '자리야':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/9b6f63cc66ddf9d5e0862173c733cc0d2e574c5c89357798d91b93b2f95a7080.png',
-    '정커퀸':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/06eeecb359f311f43a8f5121d4f9f3a93c565d70b30e94ef543c05596c9a39dc.png',
-    '해머':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/9ef1d58867136e0b26f928d896000b9dab216118f6e2f59e53f2e975e1e27afa.png',
-    '겐지':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/156b12c20b1aea872c1eeb5bb37a7de1047b2ab30ecefd0663a8925badde1ea8.png',
-    '맥크리':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/9240cd64cc8ef58df9acbf55204ab1b5d8578f743fda5931f0dbccbd75ab841b.png',
-    '미스포춘':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/4a55ced3bd597fb08e0fde9dc007f8543ac616ba98ca3db9b0e4d871a8ae17f8.png',
-    '바스티온':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/4ede795c2a681aaccfa72d0c901cba0cb8a2c292fd6a97b2ba9faed161c2d184.png',
-    '솔저76':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/c93b5f0a528c40473188f77cc2a267aee7d5b6cf5c9e104105d634b4388674e2.png',
-    '소전':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/82b8c1b8765dcb9a0ba16e343c3516bf324c771ac81e9878473280216e70a889.png',
-    '시메트라':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/ebec57e8bd68b3d4383edfeb34f8f52dd0b94a6467d594c2fee722e8a97c32aa.png',
-    '에코':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/d4f2d5b0c2b7e82d61353186c5f23152ccba9d3569b50839aa580dca3e9114ba.png',
-    '위도우메이커': 'https://d15f34w2p8l1cc.cloudfront.net/overwatch/6e4702b45f196aaf51555cf57327322721f45458b17f5f0643ed008a88378259.png',
-    '정크랫':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/7660b9fc6f25f30858fdd8797fe0d52b2306f1e78fef99843f58a274e69af046.png',
-    '파라':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/60ac2d5de4a6d34644d8872233da402f1436c87f804bb11a21661bb30bf4a51f.png',
-    '한조':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/78b61c3e806fb26b02b8980fba62189155074fc15bd865b0883268e546030be5.png',
-    '애쉬':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/4076bbaa2eb52a0bfe612434071e56e7702d5454473dbbea2f9e392a9d997a94.png',
-    '리퍼':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/dc6ff07ac790c00dc95a40882449617bb6e0e38906b353a630cffe0c815270a9.png',
-    '트레이서':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/4504f6f15cb3feaa92ecd38e01dcf751cb5abdac2e0bb52d0555727e53277502.png',
-    '벤처':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/dcab9123f5f55df22e54d4e797de43c71b917e0149dd059a7fd6136f48464cd0.png',
-    '하자드':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/ca48b96dbae6ea7f58ce8a5e73513c8c62b1685bdbf258020fb78bb21a008b5f.png',
-    '솜브라':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/47727b02a16e3bd7b2447d86ae1edf11587bc320b2aecb4f2f16a7ca4ad4e8a0.png',
-    '아나':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/985b06beae46b7ba3ca87d1512d0fc62ca7f206ceca58ef16fc44d43a1cc84ed.png',
-    '루시우':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/040bb13f5123ab93faad2f95627ba184608aef4b2469a4d3003859c7087df044.png',
-    '메르시':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/3bfb8bd8ec827e53d870f1238ab73d8aa1f5dbfbcfaaf7f96ffcd35b5c6102ab.png',
-    '모이라':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/f48f8485056d5d00dad195859188d23e50f7126b8b08b5646f46ef1b42f5e1de.png',
-    '바티스트':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/d4e6f1ca45d9f88fa89260787397f141a6f007b14e5b26698883b6a17bab9680.png',
-    '브리기테':    'https://d15f34w2p8l1cc.cloudfront.net/overwatch/795fba91376d87d441a7f359ae12a3175dfa95825ccc4414cc6b95b129fc4cb0.png',
-    '일라리':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/ce42d1455e03e79f321345fea84b27a8918b5db8bd7ab9b2ca9e569606ede9e4.png',
-    '젠야타':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/7d1546b1541a8afc39353f9337a408d6275a141b0432b7e560ef61579996b0fc.png',
-    '키리코':      'https://d15f34w2p8l1cc.cloudfront.net/overwatch/408603fe037e8576078eaac5eab2fb251489ced4003b11f5f522776d43d0b83d.png',
-    '라이프위버':  'https://d15f34w2p8l1cc.cloudfront.net/overwatch/3376515cebed0904012e67e956f6d1b9c12e03da642845eeaf787b7e4c7b339d.png',
-    '주노':        'https://d15f34w2p8l1cc.cloudfront.net/overwatch/c0167d251e57b0aa2b1e16c37d87f0e7c77263db9dd0503d77b5f2589bf3e4a0.png',
-  };
+  // OW1 구 영웅: blzgdapipro CDN, OW2 신규 영웅: d15f34w2p8l1cc CDN
+  const OW2_NEW = new Set(['ramattra','kiriko','lifeweaver','juno','sojourn','junker-queen','mauga','venture','illari','hazard']);
   const HERO_NAMES = Object.keys(OW_HEROES).sort((a,b) => a.localeCompare(b, 'ko'));
   function heroImgUrl(name) {
-    return OW_HERO_PORTRAITS[name] || '';
+    const k = OW_HEROES[name];
+    if (!k) return '';
+    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
+    return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
   }
   function renderHeroes(heroes) {
     return heroes.filter(Boolean).map(h => {
@@ -534,12 +438,8 @@
   const BASE        = location.origin + location.pathname.replace('host.html','');
   const PREVIEW_SEC = 10;
   const BID_SEC     = 10;
-  const BREAK_SEC   = 10; // 포지션 그룹 전환 대기 시간
 
   let roomData = null, timerInterval = null, transLock = false;
-  let _lastCurrentPlayer = null; // currentPlayer 변경 감지용
-  let breakInterval = null, breakRemaining = 0, breakPaused = false;
-  let prevGroupKey = null; // 이전 선수의 그룹 키 (grade_role) 추적
 
   document.getElementById('room-code-disp').textContent = ROOM;
 
@@ -550,7 +450,6 @@
       roomData = snap.val();
       render();
     });
-    initHostChat();
   }
 
   // Firebase module이 load보다 늦을 수 있으므로 polling으로 대기
@@ -575,55 +474,53 @@
     document.getElementById('main-layout').style.display      = st==='waiting' ? 'none' : 'grid';
     document.getElementById('auction-screen').style.display   = (st==='preview'||st==='bidding') ? '' : 'none';
     document.getElementById('finished-screen').style.display  = st==='finished' ? '' : 'none';
-    if (st==='waiting') { renderLotterySlots(); }
+    if (st==='waiting') renderLotterySlots();
     if (st==='preview'||st==='bidding') renderAuction();
     if (st==='finished') stopTimer();
     renderTeams(); renderQueue(); renderLinks(); renderLog();
   }
 
   function renderAuction() {
-    const { auction, players, teams, meta } = roomData;
+    const { auction, players } = roomData;
     if (!auction.currentPlayer) return;
     const p = players[auction.currentPlayer];
     const isPreview = auction.status === 'preview';
-    const grade = p.grade || '고';
 
+    // 선수 카드
+    const grade = p.grade || '중';
     document.getElementById('grade-banner').className = `grade-banner grade-${grade==='고'?'고':'저'}`;
+
+    const gbMap = { '고':'gb-고 🔴 고티어 매물', '중':'gb-중 🟡 중티어 매물', '하':'gb-하 🔵 하티어 매물' };
     const gb = document.getElementById('pc-grade-badge');
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
-    gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
-
-    // 포지션 배지
-    const roleClassMap = {'딜러':'rb-딜러','탱커':'rb-탱커','힐러':'rb-힐러','유동':'rb-유동'};
-    const rb = document.getElementById('pc-role-badge');
-    if (rb && p.role) {
-      rb.className = 'pc-role-badge ' + (roleClassMap[p.role]||'rb-유동');
-      rb.textContent = p.role;
-    } else if (rb) { rb.textContent = ''; }
-
-    const photoEl = document.getElementById('pc-photo');
-    if (p.photo) { photoEl.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" />`; }
-    else { photoEl.innerHTML = '👤'; }
+    gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
 
     document.getElementById('pc-name').textContent = p.name;
 
-    // 스타일
-    const metaEl = document.getElementById('pc-meta');
-    if (metaEl) metaEl.innerHTML = p.style
-      ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '';
-
+    // 티어 정보
     document.getElementById('pc-tiers').innerHTML = `
       <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
       <div class="tier-item"><div class="tier-label">전 시즌</div><div class="tier-val">${p.prevTier||'-'}</div></div>
       <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
     `;
 
-    document.getElementById('pc-heroes').innerHTML = renderHeroes([p.hero1,p.hero2,p.hero3]);
+    // 선호 영웅 — 이미지로 표시
+    const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
+    document.getElementById('pc-heroes').className = 'hero-icon-wrap';
+    document.getElementById('pc-heroes').innerHTML = renderHeroes(heroes);
 
+    // 메타 정보
+    document.getElementById('pc-meta').innerHTML = `
+      <div class="pc-meta-item"><div class="pc-meta-label">포지션</div><div class="pc-meta-val">${p.role||'-'}</div></div>
+      <div class="pc-meta-item"><div class="pc-meta-label">플레이 스타일</div><div class="pc-meta-val">${p.style||'-'}</div></div>
+    `;
+
+    // 소개
     const introEl = document.getElementById('pc-intro');
     if (p.intro) { introEl.textContent = `💬 ${p.intro}`; introEl.style.display=''; }
     else { introEl.style.display='none'; }
 
+    // 입찰가
     document.getElementById('bid-amount').textContent = `${auction.currentBid||0} pt`;
     document.getElementById('bid-team').textContent = auction.currentLeader
       ? `👑 ${getTeamName(auction.currentLeader)} 입찰 중` : '입찰자 없음';
@@ -659,16 +556,7 @@
     }
 
     if (!auction.paused) {
-      // 현재 선수가 바뀐 경우에만 transLock 초기화 + 타이머 재시작
-      const curPlayer = auction.currentPlayer;
-      if (curPlayer !== _lastCurrentPlayer) {
-        _lastCurrentPlayer = curPlayer;
-        transLock = false;
-        startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
-      } else if (!timerInterval) {
-        // 타이머가 없으면 (재개 등) 다시 시작, transLock은 유지
-        startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
-      }
+      startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
     }
 
     // NEXT 선수
@@ -685,7 +573,11 @@
     nextEl.style.display = '';
     const np = players[remaining[0]];
     const g  = np?.grade || '중';
+    const ngb = document.getElementById('next-grade-badge');
+    ngb.textContent = g==='고'?'🔴 고':g==='중'?'🟡 중':'🔵 하';
+    ngb.className = 'next-grade-badge ' + (g==='고'?'gb-고':'gb-저');
     document.getElementById('next-name').textContent = np?.name || '-';
+    document.getElementById('next-role').textContent = np?.role || '-';
   }
 
   // ── 타이머
@@ -718,146 +610,56 @@
       if (remMs <= 0 && isPreview && !transLock) {
         transLock = true; stopTimer(); transitionToBidding();
       }
+      // ✅ 경매 시간 종료 → 자동 낙찰 or 자동 유찰
       if (remMs <= 0 && !isPreview && !transLock) {
-        // 타이머 멈추기만 하고, autoSettle은 Firebase timerEndsAt 기준으로 별도 처리
-        transLock = true; stopTimer(); scheduleAutoSettle();
+        transLock = true; stopTimer(); autoSettle();
       }
     }, 50);
   }
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
-  // ── 자동 낙찰 스케줄러 (중복 실행 방지)
-  let _autoSettleTimer = null;
-  function scheduleAutoSettle() {
-    if (_autoSettleTimer) return; // 이미 예약됨
-    _autoSettleTimer = setTimeout(async () => {
-      _autoSettleTimer = null;
-      // 현재 Firebase 상태 재확인
-      if (roomData?.auction?.status !== 'bidding') { transLock = false; return; }
-      await autoSettle();
-    }, 300);
-  }
-
   // ── 자동 낙찰 / 자동 유찰
   async function autoSettle() {
     if (roomData?.auction?.status !== 'bidding') { transLock = false; return; }
     const { auction, teams } = roomData;
-    try {
-      if (auction.currentLeader) {
-        const tk  = auction.currentLeader;
-        const pid = auction.currentPlayer;
-        const bid = auction.currentBid;
-        const upd = {};
-        upd[`rooms/${ROOM}/teams/${tk}/members`]        = [...(teams[tk].members||[]), pid];
-        upd[`rooms/${ROOM}/teams/${tk}/points`]         = teams[tk].points - bid;
-        upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = tk;
-        const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
-        upd[`rooms/${ROOM}/auction/log`] = log;
-        await nextPlayer(upd);
-        showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
-      } else {
-        await nextPlayer({});
-        showToast('⏰ 시간 초과 — 자동 유찰');
-      }
-    } catch(e) {
-      console.error('autoSettle 오류:', e);
-    } finally {
-      transLock = false;
+
+    if (auction.currentLeader) {
+      const tk  = auction.currentLeader;
+      const pid = auction.currentPlayer;
+      const bid = auction.currentBid;
+      const upd = {};
+      upd[`rooms/${ROOM}/teams/${tk}/members`]        = [...(teams[tk].members||[]), pid];
+      upd[`rooms/${ROOM}/teams/${tk}/points`]         = teams[tk].points - bid;
+      upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = tk;
+      const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
+      upd[`rooms/${ROOM}/auction/log`] = log;
+      await nextPlayer(upd);
+      showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
+    } else {
+      // 입찰자 없음 → 자동 유찰
+      await nextPlayer({});
+      showToast('⏰ 시간 초과 — 자동 유찰');
     }
+    transLock = false;
   }
 
   async function transitionToBidding() {
     if (roomData?.auction?.status !== 'preview') { transLock = false; return; }
     const { ref, update } = window._dbFns;
-    try {
-      await update(ref(window._db, `rooms/${ROOM}/auction`), {
-        status: 'bidding', timerEndsAt: Date.now() + BID_SEC * 1000
-      });
-    } catch(e) {
-      console.error('transitionToBidding 오류:', e);
-    } finally {
-      transLock = false;
-    }
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status: 'bidding', timerEndsAt: Date.now() + BID_SEC * 1000
+    });
+    transLock = false;
   }
 
   // ── 경매 시작
-  // ── 경매 시작 전 전체화면 카운트다운
-  let _startCountInterval = null;
-  let _shuffledOrder = null; // 추첨 결과 순서 저장
-
-  function startAuctionWithCountdown() {
-    // 미접속 팀장 확인
-    const teams = Object.entries(roomData?.teams || {});
-    const offline = teams.filter(([,t]) => !t.leaderOnline).map(([,t]) => t.name);
-    if (offline.length > 0) {
-      const go = confirm(`아직 접속하지 않은 팀장이 있습니다:\n\n${offline.map(n=>'• '+n).join('\n')}\n\n그래도 경매를 시작하시겠습니까?`);
-      if (!go) return;
-    }
-    const overlay = document.getElementById('start-countdown-overlay');
-    overlay.style.display = 'flex';
-    let sec = 10;
-    const numEl = document.getElementById('start-count-num');
-    function tick() {
-      numEl.textContent = sec;
-      numEl.style.transform = 'scale(1.15)';
-      numEl.style.color = sec <= 3 ? 'var(--danger)' : 'var(--accent)';
-      setTimeout(() => { numEl.style.transform = 'scale(1)'; }, 150);
-      if (sec <= 0) {
-        clearInterval(_startCountInterval);
-        overlay.style.display = 'none';
-        startAuction();
-        return;
-      }
-      sec--;
-    }
-    tick();
-    _startCountInterval = setInterval(tick, 1000);
-  }
-
-  function skipStartCountdown() {
-    clearInterval(_startCountInterval);
-    document.getElementById('start-countdown-overlay').style.display = 'none';
-    startAuction();
-  }
-
-  // ── 추첨 다시하기
-  function retryLottery() {
-    _shuffledOrder = null;
-    const msg = document.getElementById('lottery-status-msg');
-    msg.textContent = '시작 버튼을 누르면 팀장 순서를 추첨합니다';
-    msg.style.color = 'var(--muted)';
-    document.getElementById('start-btn').style.display = '';
-    document.getElementById('start-btn').disabled = false;
-    document.getElementById('retry-btn').style.display = 'none';
-    document.getElementById('begin-auction-btn').style.display = 'none';
-    // 슬롯 초기화
-    if (roomData) {
-      Object.keys(roomData.teams || {}).forEach(tk => {
-        const el   = document.getElementById('ls-order-' + tk);
-        const card = document.getElementById('ls-' + tk);
-        if (el)   { el.textContent = '?'; el.style.color = 'var(--muted)'; el.style.fontWeight = '400'; }
-        if (card) { card.style.transform = ''; card.style.filter = ''; }
-      });
-    }
-  }
-
   async function startAuction() {
-    const { ref, update, get } = window._dbFns;
-
-    // 추첨 순서가 있으면 → 팀장별 입찰 포인트 순서 조정
-    // (추첨 순서는 팀장 입찰 순서이지 선수 경매 순서와 다름 — 여기선 meta에 저장)
-    const upd = {};
-    if (_shuffledOrder && _shuffledOrder.length > 0) {
-      upd[`rooms/${ROOM}/meta/leaderOrder`] = _shuffledOrder;
-    }
-
+    const { ref, update } = window._dbFns;
     const first = roomData.auction.order[0];
-    upd[`rooms/${ROOM}/auction/status`]        = 'preview';
-    upd[`rooms/${ROOM}/auction/currentPlayer`] = first;
-    upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
-    upd[`rooms/${ROOM}/auction/currentLeader`] = null;
-    upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
-    await update(ref(window._db), upd);
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status:'preview', currentPlayer:first, currentBid:0,
+      currentLeader:null, timerEndsAt: Date.now() + PREVIEW_SEC * 1000
+    });
   }
 
   // ── 낙찰
@@ -925,111 +727,21 @@
 
   // ── 다음 선수
   async function nextPlayer(extra={}) {
-    const { ref, update, get } = window._dbFns;
-
-    // extra 먼저 커밋 (낙찰 처리: assignedTo, members 포함)
-    if (Object.keys(extra).length > 0) {
-      await update(ref(window._db), extra);
-    }
-
-    // Firebase에서 최신 상태 다시 읽어서 rem 계산 (낙찰 반영 보장)
-    const freshSnap = await get(ref(window._db, `rooms/${ROOM}`));
-    const fresh = freshSnap.val();
-    const { auction, players } = fresh;
-
-    const curPid = auction.currentPlayer;
-    const rem = auction.order.filter(pid =>
-      pid !== curPid && players[pid]?.assignedTo == null
-    );
-
+    const { ref, update } = window._dbFns;
+    const { auction } = roomData;
+    const rem = auction.order.filter(pid => pid!==auction.currentPlayer && roomData.players[pid]?.assignedTo==null);
+    const upd = {...extra};
     if (rem.length === 0) {
-      await update(ref(window._db), {
-        [`rooms/${ROOM}/auction/status`]: 'finished',
-        [`rooms/${ROOM}/auction/currentPlayer`]: null,
-      });
-      return;
-    }
-
-    const nextPid  = rem[0];
-    const nextP    = players[nextPid];
-    const nextKey  = `${nextP?.grade||'고'}_${nextP?.role||''}`;
-
-    const curP   = curPid ? players[curPid] : null;
-    const curKey = curP ? `${curP.grade||'고'}_${curP.role||''}` : null;
-
-    // 바로 다음 선수로 (그룹 브레이크 제거)
-    // write 전에 _lastCurrentPlayer 선점해서 render 재진입 시 타이머 중복 방지
-    _lastCurrentPlayer = nextPid;
-    transLock = false;
-    await update(ref(window._db), {
-      [`rooms/${ROOM}/auction/status`]:        'preview',
-      [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,
-      [`rooms/${ROOM}/auction/currentBid`]:    0,
-      [`rooms/${ROOM}/auction/currentLeader`]: null,
-      [`rooms/${ROOM}/auction/timerEndsAt`]:   Date.now() + PREVIEW_SEC * 1000,
-    });
-  }
-
-  // ── 포지션 전환 브레이크 화면
-  function showBreak(doneLabel, nextLabel, onDone) {
-    stopTimer();
-    document.getElementById('break-overlay').style.display = '';
-    document.getElementById('break-done-txt').textContent  = `${doneLabel} 경매 완료!`;
-    document.getElementById('break-next-txt').textContent  = nextLabel;
-    breakRemaining = BREAK_SEC;
-    breakPaused    = false;
-    const pauseBtn = document.getElementById('break-pause-btn');
-    pauseBtn.textContent = '⏸ 일시정지';
-    pauseBtn.style.background = 'rgba(245,158,11,.15)';
-    pauseBtn.style.color      = 'var(--accent)';
-    pauseBtn.style.borderColor= 'var(--accent)';
-
-    const countEl = document.getElementById('break-count');
-
-    function tick() {
-      countEl.textContent = Math.ceil(breakRemaining);
-      countEl.className   = 'break-count' + (breakRemaining <= 3 ? ' urgent' : '');
-      if (breakRemaining <= 0) {
-        clearInterval(breakInterval);
-        document.getElementById('break-overlay').style.display = 'none';
-        onDone();
-        return;
-      }
-    }
-    tick();
-    clearInterval(breakInterval);
-    breakInterval = setInterval(() => {
-      if (!breakPaused) {
-        breakRemaining -= 0.1;
-        tick();
-      }
-    }, 100);
-
-    // skipBreak / toggleBreakPause 에서 onDone 접근용
-    window._breakOnDone = onDone;
-  }
-
-  function toggleBreakPause() {
-    breakPaused = !breakPaused;
-    const btn = document.getElementById('break-pause-btn');
-    if (breakPaused) {
-      btn.textContent = '▶ 재개';
-      btn.style.background  = 'rgba(34,197,94,.15)';
-      btn.style.color       = 'var(--success)';
-      btn.style.borderColor = 'var(--success)';
+      upd[`rooms/${ROOM}/auction/status`] = 'finished';
+      upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
     } else {
-      btn.textContent = '⏸ 일시정지';
-      btn.style.background  = 'rgba(245,158,11,.15)';
-      btn.style.color       = 'var(--accent)';
-      btn.style.borderColor = 'var(--accent)';
+      upd[`rooms/${ROOM}/auction/status`]        = 'preview';
+      upd[`rooms/${ROOM}/auction/currentPlayer`] = rem[0];
+      upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+      upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+      upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
     }
-  }
-
-  function skipBreak() {
-    clearInterval(breakInterval);
-    breakRemaining = 0;
-    document.getElementById('break-overlay').style.display = 'none';
-    if (window._breakOnDone) window._breakOnDone();
+    await update(ref(window._db), upd);
   }
 
   const TEAM_COLORS = [
@@ -1074,7 +786,6 @@
         ? `<img src="${t.photo}" />`
         : `<span style="font-size:1.4rem;">👤</span>`;
 
-      const logMap2 = {}; (auction.log||[]).forEach(e => { logMap2[e.pid] = e.price; });
       const slots = Array.from({length: maxSlots}, (_, i) => {
         const pid = members[i];
         const p   = pid ? players[pid] : null;
@@ -1083,9 +794,8 @@
           const photoEl = p.photo
             ? `<img class="team-slot-photo" src="${p.photo}" />`
             : `<span style="font-size:.7rem;color:rgba(255,255,255,.6);">${i+2}</span>`;
-          const priceBadge = logMap2[pid] != null ? `<div style="position:absolute;top:2px;right:2px;background:rgba(245,158,11,.85);border-radius:3px;font-size:.5rem;font-weight:700;color:#0a0e1a;padding:1px 4px;line-height:1.4;">${logMap2[pid]}pt</div>` : '';
           return `<div class="team-slot filled">
-            ${photoEl}${priceBadge}
+            ${photoEl}
             <div class="team-slot-grade">${grade}</div>
             <div class="team-slot-name">${p.name}</div>
           </div>`;
@@ -1151,216 +861,63 @@
       const photo = t.photo
         ? `<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;" />`
         : '👤';
-      const isOnline  = !!t.leaderOnline;
-      const onlineDot = isOnline
-        ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:3px;"></span>`
-        : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:3px;"></span>`;
-      const onlineTxt = isOnline ? '접속 완료' : '미접속';
-      const onlineClr = isOnline ? '#22c55e' : '#ef4444';
-      return `<div id="ls-${tk}" style="display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .3s;">
-        <div style="width:90px;height:90px;border-radius:12px;overflow:hidden;background:var(--surface2);
-          border:3px solid ${isOnline?'#22c55e':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:2rem;">${photo}</div>
-        <div style="font-size:1rem;font-weight:700;">${t.name}</div>
-        <div style="font-size:.82rem;color:${onlineClr};display:flex;align-items:center;font-weight:600;">${onlineDot}${onlineTxt}</div>
-        <div id="ls-order-${tk}" style="font-size:.88rem;color:var(--muted);font-weight:600;">?</div>
+      return `<div id="ls-${tk}" style="display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .3s;">
+        <div style="width:54px;height:54px;border-radius:8px;overflow:hidden;background:var(--surface2);
+          border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${photo}</div>
+        <div style="font-size:.75rem;font-weight:700;">${t.name}</div>
+        <div id="ls-order-${tk}" style="font-size:.7rem;color:var(--muted);">?</div>
       </div>`;
     }).join('');
-
-    // 전체 미접속 현황 표시
-    const total   = teams.length;
-    const online  = teams.filter(([,t]) => t.leaderOnline).length;
-    const statusEl = document.getElementById('lottery-status-msg');
-    if (online < total && statusEl.textContent === '시작 버튼을 누르면 팀장 순서를 추첨합니다') {
-      statusEl.innerHTML = `팀장 접속 현황: <span style="color:#22c55e;font-weight:700;">${online}</span> / ${total}명 접속 완료`;
-    }
   }
 
-  // ── 랜덤 추첨 (두구두구 → 짜잔 연출)
+  // ── 랜덤 추첨
   function startWithLottery() {
     if (!roomData) return;
     const btn = document.getElementById('start-btn');
     btn.disabled = true;
+    btn.textContent = '추첨 중...';
 
     const msg = document.getElementById('lottery-status-msg');
+    msg.style.color = 'var(--accent)';
+    msg.textContent = '팀장 입찰 순서를 정하고 있습니다...';
+
     const teamKeys = Object.keys(roomData.teams || {});
     const shuffled = [...teamKeys].sort(() => Math.random() - 0.5);
 
     // 슬롯 초기화
     teamKeys.forEach(tk => {
-      const el   = document.getElementById(`ls-order-${tk}`);
+      const el = document.getElementById(`ls-order-${tk}`);
       const card = document.getElementById(`ls-${tk}`);
-      if (el)   { el.textContent = '?'; el.style.color = 'var(--muted)'; el.style.fontWeight = '400'; }
-      if (card) { card.style.transform = ''; card.style.opacity = '1'; }
+      if (el) { el.textContent = '?'; el.style.color = 'var(--muted)'; }
+      if (card) card.style.transform = '';
     });
 
-    // 1단계: 두구두구 — 모든 슬롯이 랜덤하게 빠르게 바뀜
-    msg.style.color = 'var(--preview)';
-    msg.textContent = '🎲 추첨 중...';
-
-    let drumRoll = 0;
-    const drumInterval = setInterval(() => {
-      // 각 슬롯에 랜덤 숫자를 빠르게 표시
-      const randomOrder = [...teamKeys].sort(() => Math.random() - 0.5);
-      randomOrder.forEach((tk, i) => {
-        const el = document.getElementById(`ls-order-${tk}`);
+    // 순차적으로 순위 공개 (0.45초 간격)
+    shuffled.forEach((tk, i) => {
+      setTimeout(() => {
+        const el   = document.getElementById(`ls-order-${tk}`);
+        const card = document.getElementById(`ls-${tk}`);
         if (el) {
           el.textContent = `${i+1}순위`;
-          el.style.color = 'var(--muted)';
-          el.style.fontWeight = '400';
+          el.style.color  = i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : 'var(--text)';
+          el.style.fontWeight = i === 0 ? '800' : '600';
         }
-      });
-      drumRoll++;
-    }, 80); // 80ms 간격으로 빠르게
+        if (card) {
+          card.style.transform = 'scale(1.12)';
+          card.style.transition = 'transform .25s';
+          setTimeout(() => { card.style.transform = 'scale(1)'; }, 300);
+        }
 
-    // 2단계: 서서히 느려지다가 한 명씩 확정 공개
-    setTimeout(() => {
-      clearInterval(drumInterval);
-      // 슬롯 다시 초기화
-      teamKeys.forEach(tk => {
-        const el = document.getElementById(`ls-order-${tk}`);
-        if (el) { el.textContent = '?'; el.style.color = 'var(--muted)'; }
-      });
-
-      msg.style.color = 'var(--accent)';
-      msg.textContent = '🥁 결과 공개 중...';
-
-      // 3단계: 한 명씩 순서대로 공개 (짜잔!)
-      shuffled.forEach((tk, i) => {
-        setTimeout(() => {
-          const el   = document.getElementById(`ls-order-${tk}`);
-          const card = document.getElementById(`ls-${tk}`);
-          const name = roomData.teams[tk]?.name || tk;
-
-          // 잠깐 물음표 깜빡임
-          let blink = 0;
-          const blinkInt = setInterval(() => {
-            if (el) el.textContent = blink % 2 === 0 ? '...' : '?';
-            blink++;
-            if (blink >= 6) {
-              clearInterval(blinkInt);
-              // 확정 공개!
-              if (el) {
-                el.textContent    = `${i+1}순위`;
-                el.style.color    = i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : 'var(--text)';
-                el.style.fontWeight = i === 0 ? '900' : '700';
-                el.style.fontSize = i === 0 ? '1rem' : '.9rem';
-              }
-              if (card) {
-                card.style.transition  = 'transform .3s, box-shadow .3s';
-                card.style.transform   = 'scale(1.18)';
-                card.style.filter      = i === 0 ? 'drop-shadow(0 0 12px #f59e0b)' : '';
-                setTimeout(() => {
-                  card.style.transform = 'scale(1)';
-                  card.style.filter    = '';
-                }, 350);
-              }
-              // 1순위 공개 시 특별 메시지
-              if (i === 0) {
-                msg.textContent = `🎉 1순위: ${name} 팀장!`;
-                msg.style.color = '#f59e0b';
-              }
-              // 마지막 공개
-              if (i === shuffled.length - 1) {
-                // 추첨 순서 저장
-                _shuffledOrder = shuffled;
-                setTimeout(() => {
-                  msg.textContent = `✅ 추첨 완료! 1순위: ${roomData.teams[shuffled[0]]?.name}`;
-                  msg.style.color = 'var(--success)';
-                  // 경매 시작 + 다시하기 버튼 표시
-                  document.getElementById('begin-auction-btn').style.display = '';
-                  document.getElementById('retry-btn').style.display = '';
-                  btn.style.display = 'none';
-                }, 400);
-              }
-            }
-          }, 120);
-        }, i * 700); // 700ms 간격으로 한 명씩
-      });
-    }, 1500); // 1.5초간 두구두구
+        // 마지막 공개 후 → 잠깐 보여주고 경매 시작
+        if (i === shuffled.length - 1) {
+          msg.textContent = `🎉 추첨 완료! 1순위: ${roomData.teams[shuffled[0]]?.name}`;
+          setTimeout(() => startAuction(), 1800);
+        }
+      }, i * 450);
+    });
   }
 
   function runLottery() { startWithLottery(); }
-  // ── 채팅 (진행자) ────────────────────────────────────────────────
-  let chatOpen = false;
-  let unreadCount = 0;
-  let lastChatTs = 0;
-
-  function initHostChat() {
-    const { ref, onValue } = window._dbFns;
-    onValue(ref(window._db, `rooms/${ROOM}/chat`), snap => {
-      renderHostChatMessages(snap.val() || {});
-    });
-  }
-
-  function toggleChat() {
-    chatOpen = !chatOpen;
-    document.getElementById('chat-box').classList.toggle('open', chatOpen);
-    if (chatOpen) {
-      unreadCount = 0;
-      updateChatBadge();
-      scrollChatBottom();
-      document.getElementById('chat-input').focus();
-    }
-  }
-
-  function updateChatBadge() {
-    const badge = document.getElementById('chat-badge');
-    if (unreadCount > 0 && !chatOpen) {
-      badge.style.display = 'flex';
-      badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-
-  function renderHostChatMessages(msgs) {
-    const el = document.getElementById('chat-messages');
-    if (!el) return;
-    const entries = Object.values(msgs).sort((a,b) => a.ts - b.ts);
-    const newMsgs = entries.filter(m => m.ts > lastChatTs);
-    if (newMsgs.length > 0 && !chatOpen) {
-      unreadCount += newMsgs.length;
-      updateChatBadge();
-    }
-    if (entries.length > 0) lastChatTs = entries[entries.length-1].ts;
-
-    el.innerHTML = entries.map(m => {
-      const isMe     = m.senderId === 'host';
-      const isSystem = m.type === 'system';
-      const dt       = new Date(m.ts);
-      const timeStr  = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-      if (isSystem) {
-        return `<div class="chat-msg system"><div class="chat-bubble" style="font-size:.72rem;">${m.text}</div></div>`;
-      }
-      const name = isMe ? '🎙 진행자' : m.senderName;
-      return `<div class="chat-msg ${isMe?'mine':'others'}">
-        ${!isMe ? `<div class="chat-name">${name}</div>` : ''}
-        <div style="display:flex;align-items:flex-end;gap:4px;${isMe?'flex-direction:row-reverse;':''}">
-          <div class="chat-bubble">${m.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-          <div class="chat-time">${timeStr}</div>
-        </div>
-      </div>`;
-    }).join('');
-    if (chatOpen) scrollChatBottom();
-  }
-
-  function scrollChatBottom() {
-    const el = document.getElementById('chat-messages');
-    if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
-  }
-
-  async function sendChat() {
-    const input = document.getElementById('chat-input');
-    const text  = input.value.trim();
-    if (!text) return;
-    const { ref, push } = window._dbFns;
-    await push(ref(window._db, `rooms/${ROOM}/chat`), {
-      senderId: 'host', senderName: '🎙 진행자',
-      text, ts: Date.now(), type: 'message'
-    });
-    input.value = '';
-  }
-
   function copyObs() { navigator.clipboard.writeText(`${BASE}auction.html?room=${ROOM}&role=observer`).then(()=>showToast('복사됨!')); }
   function copyObsEl() { navigator.clipboard.writeText(document.getElementById('obs-link').textContent).then(()=>showToast('복사됨!')); }
   function goAdmin() { window.open(`admin.html?room=${ROOM}`, '_blank'); }
