@@ -345,9 +345,7 @@
 
           <div class="next-section" id="next-section" style="display:none;">
             <span class="next-label">NEXT</span>
-            <span class="next-grade-badge" id="next-grade-badge"></span>
             <span class="next-name" id="next-name">-</span>
-            <span class="next-role" id="next-role">-</span>
           </div>
         </div>
 
@@ -687,11 +685,7 @@
     nextEl.style.display = '';
     const np = players[remaining[0]];
     const g  = np?.grade || '중';
-    const ngb = document.getElementById('next-grade-badge');
-    ngb.textContent = g==='고'?'🔴 고티어':'🔵 저티어';
-    ngb.className = 'next-grade-badge ' + (g==='고'?'gb-고':'gb-저');
     document.getElementById('next-name').textContent = np?.name || '-';
-    document.getElementById('next-role').textContent = np?.role || '-';
   }
 
   // ── 타이머
@@ -724,13 +718,25 @@
       if (remMs <= 0 && isPreview && !transLock) {
         transLock = true; stopTimer(); transitionToBidding();
       }
-      // ✅ 경매 시간 종료 → 자동 낙찰 or 자동 유찰
       if (remMs <= 0 && !isPreview && !transLock) {
-        transLock = true; stopTimer(); autoSettle();
+        // 타이머 멈추기만 하고, autoSettle은 Firebase timerEndsAt 기준으로 별도 처리
+        transLock = true; stopTimer(); scheduleAutoSettle();
       }
     }, 50);
   }
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  // ── 자동 낙찰 스케줄러 (중복 실행 방지)
+  let _autoSettleTimer = null;
+  function scheduleAutoSettle() {
+    if (_autoSettleTimer) return; // 이미 예약됨
+    _autoSettleTimer = setTimeout(async () => {
+      _autoSettleTimer = null;
+      // 현재 Firebase 상태 재확인
+      if (roomData?.auction?.status !== 'bidding') { transLock = false; return; }
+      await autoSettle();
+    }, 300);
+  }
 
   // ── 자동 낙찰 / 자동 유찰
   async function autoSettle() {
@@ -952,6 +958,9 @@
     const curKey = curP ? `${curP.grade||'고'}_${curP.role||''}` : null;
 
     // 바로 다음 선수로 (그룹 브레이크 제거)
+    // write 전에 _lastCurrentPlayer 선점해서 render 재진입 시 타이머 중복 방지
+    _lastCurrentPlayer = nextPid;
+    transLock = false;
     await update(ref(window._db), {
       [`rooms/${ROOM}/auction/status`]:        'preview',
       [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,

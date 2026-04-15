@@ -18,7 +18,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, set, get, remove, update, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     // ✅ Firebase 설정 붙여넣기
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
@@ -33,7 +33,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
     window._db = db;
-    window._dbFns = { ref, set, get };
+    window._dbFns = { ref, set, get, remove, update, push };
     window._remove = remove;
   </script>
   <style>
@@ -825,6 +825,16 @@
     window.location.href = `auction.html?room=${code}`;
   }
 
+  async function deleteRoom(code) {
+    if (!confirm(`방 "${code}"를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      const { ref, remove } = window._dbFns;
+      await remove(ref(window._db, `rooms/${code}`));
+      showToast(`✅ 방 ${code} 삭제 완료`);
+      loadMyRooms();
+    } catch(e) { showToast('삭제 실패: ' + e.message); }
+  }
+
   async function loadMyRooms() {
     const listEl = document.getElementById('my-rooms-list');
     if (!listEl) return;
@@ -897,6 +907,10 @@
               border-radius:7px;color:var(--text);font-weight:700;font-family:inherit;font-size:.78rem;cursor:pointer;">
               입장
             </button>
+            <button onclick="deleteRoom('${code}')"
+              style="padding:7px 11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+              border-radius:7px;color:#ef4444;font-weight:700;font-family:inherit;font-size:.78rem;cursor:pointer;"
+              title="방 삭제">🗑</button>
           </div>
         </div>`;
       }).join('');
@@ -1164,7 +1178,7 @@
     if (!confirm('이 임시저장을 삭제할까요?')) return;
     const uid = window._currentUser?.id;
     try {
-      await window._remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
+      await window._dbFns.remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
       showToast('삭제 완료');
       renderDraftList();
       checkSavedData();
@@ -1290,7 +1304,7 @@
     if (!confirm('이 팀장 목록을 삭제할까요?')) return;
     const uid = window._currentUser?.id;
     try {
-      await window._remove(window._dbFns.ref(window._db, `leaderLib/${uid}/${libId}`));
+      await window._dbFns.remove(window._dbFns.ref(window._db, `leaderLib/${uid}/${libId}`));
       showToast('삭제 완료');
       renderLeaderLibList();
     } catch(e) { showToast('삭제 실패: ' + e.message); }
@@ -1444,7 +1458,7 @@
     if (!confirm('이 선수 목록을 삭제할까요?')) return;
     const uid = window._currentUser?.id;
     try {
-      await window._remove(window._dbFns.ref(window._db, `playerLib/${uid}/${libId}`));
+      await window._dbFns.remove(window._dbFns.ref(window._db, `playerLib/${uid}/${libId}`));
       showToast('삭제 완료');
       renderPlayerLibList();
     } catch(e) { showToast('삭제 실패: ' + e.message); }
