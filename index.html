@@ -618,8 +618,8 @@
 
     const roomData = {
       meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now(),
-              createdBy: window._currentUser?.id || 'unknown',
-              createdByName: window._currentUser?.name || '알 수 없음' },
+              createdBy: 'admin',
+              createdByName: '관리자' },
       teams,
       players: playersObj,
       auction: {
@@ -666,6 +666,8 @@
   function checkAdminPw() {
     const val = document.getElementById('admin-pw-input').value;
     if (val === getAdminPw()) {
+      sessionStorage.setItem('dohyeon_admin', '1');
+      window._currentUser = { id: 'admin', name: '관리자', role: 'admin' };
       document.getElementById('admin-pw-section').style.display = 'none';
       document.getElementById('admin-room-section').style.display = '';
       loadRooms();
@@ -730,15 +732,14 @@
   // ── 폼 전체 저장
   // ── Firebase 다중 임시저장 ──────────────────────────────────────────
   function _draftsRef() {
-    const uid = window._currentUser?.id;
-    if (!uid || !window._db || !window._dbFns) return null;
-    return window._dbFns.ref(window._db, `drafts/${uid}`);
+    if (!window._db || !window._dbFns) return null;
+    return window._dbFns.ref(window._db, 'drafts/admin');
   }
 
   async function saveFormData() {
-    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    if (window._currentUser?.role !== 'admin') { showToast('관리자만 임시저장이 가능합니다'); return; }
     if (!window._db || !window._dbFns) { showToast('Firebase 연결 중입니다. 잠시 후 다시 시도해주세요'); return; }
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const savedAt = Date.now();
     const draftId = `draft_${savedAt}`;
     const titleVal = document.getElementById('title').value.trim() || '제목 없음';
@@ -777,8 +778,8 @@
   }
 
   function checkSavedData() {
-    if (window._currentUser?.guest || !window._db || !window._dbFns) return;
-    const uid = window._currentUser?.id;
+    if (window._currentUser?.role !== 'admin' || !window._db || !window._dbFns) return;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     get(ref(window._db, `drafts/${uid}`)).then(snap => {
       const info = document.getElementById('save-info');
@@ -792,7 +793,7 @@
 
   // ── 임시저장 모달 ──────────────────────────────────────────────────
   function openDraftModal() {
-    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
+    if (window._currentUser?.role !== 'admin') { showToast('관리자 로그인 후 이용 가능합니다'); return; }
     document.getElementById('draft-modal').style.display = '';
     renderDraftList();
   }
@@ -807,7 +808,7 @@
       area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">Firebase 연결 중...</div>';
       return;
     }
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}`));
@@ -843,7 +844,7 @@
 
   async function loadDraft(draftId) {
     if (!confirm('저장된 내역을 불러오면 현재 입력 내용이 초기화됩니다. 계속할까요?')) return;
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}/${draftId}`));
@@ -900,7 +901,7 @@
 
   async function deleteDraft(draftId) {
     if (!confirm('이 임시저장을 삭제할까요?')) return;
-    const uid = window._currentUser?.id;
+    const uid = 'admin';
     try {
       await window._remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
       showToast('삭제 완료');
@@ -952,56 +953,20 @@
   // 초기화 (섹션은 메인 선택에서 시작)
   // renderLeaders/autoGeneratePlayers 는 showSection('create') 시 호출됨
 
-  // ── 로그인 체크 + 비회원 지원
-  (function() {
-    const user = sessionStorage.getItem('dohyeon_user');
-    // 비회원 세션도 허용 (guest 플래그)
-    if (!user) { location.href = 'login.html'; return; }
-    const u = JSON.parse(user);
+  // 비회원으로 자동 진입
+  window._currentUser = { guest: true, name: '비회원', id: 'guest' };
+  window.addEventListener('DOMContentLoaded', () => {
     const bar = document.getElementById('user-bar');
-    const nameEl = document.getElementById('user-name-disp');
-    if (bar) bar.style.display = 'flex';
-    if (nameEl) {
-      if (u.guest) {
-        nameEl.innerHTML = `비회원 <span style="font-size:.7rem;color:var(--muted);">(임시저장 불가)</span>`;
-        // 비회원은 임시저장 버튼 숨김
-        const saveBtns = document.getElementById('save-btns');
-        if (saveBtns) saveBtns.style.display = 'none';
-      } else {
-        nameEl.textContent = u.name;
-        if (u.role === 'admin') {
-          nameEl.innerHTML = `${u.name} <span style="font-size:.7rem;padding:2px 7px;border-radius:8px;
-            background:rgba(245,158,11,.2);color:var(--accent);border:1px solid var(--accent);
-            font-weight:700;margin-left:4px;">👑 관리자</span>`;
-          document.getElementById('admin-pw-section').style.display = 'none';
-          const roomSec = document.getElementById('admin-room-section');
-          if (roomSec) roomSec.style.display = '';
-        }
-        // role 없으면 Firebase에서 확인
-        if (!u.role) {
-          window.addEventListener('load', () => {
-            if (!window._dbFns) return;
-            const { ref, get } = window._dbFns;
-            get(ref(window._db, `users/${u.id}/role`)).then(snap => {
-              if (snap.exists() && snap.val() === 'admin') {
-                u.role = 'admin';
-                sessionStorage.setItem('dohyeon_user', JSON.stringify(u));
-                location.reload();
-              }
-            }).catch(()=>{});
-          });
-        }
-      }
+    if (bar) bar.style.display = 'none';
+    // 관리자 세션 유지 확인
+    if (sessionStorage.getItem('dohyeon_admin') === '1') {
+      window._currentUser = { id: 'admin', name: '관리자', role: 'admin' };
+      const pwSec = document.getElementById('admin-pw-section');
+      if (pwSec) pwSec.style.display = 'none';
+      const roomSec = document.getElementById('admin-room-section');
+      if (roomSec) roomSec.style.display = '';
     }
-    window._currentUser = u;
-  })();
-
-  function doLogout() {
-    if (confirm('로그아웃 하시겠습니까?')) {
-      sessionStorage.removeItem('dohyeon_user');
-      location.href = 'login.html';
-    }
-  }
+  });
 </script>
 </body>
 </html>
