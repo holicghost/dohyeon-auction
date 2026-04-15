@@ -40,7 +40,7 @@
     .badge-obs{background:var(--surface2);border:1px solid var(--border);border-radius:20px;
       padding:4px 12px;font-size:.8rem;color:var(--muted);}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
-    .card-title{font-size:.82rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700;}
+    .card-title{font-size:.92rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700;}
 
     /* ── 2컬럼 레이아웃 ── */
     .auction-layout{display:grid;grid-template-columns:320px 1fr 280px;gap:12px;align-items:start;}
@@ -65,6 +65,11 @@
       justify-content:center;font-size:3rem;overflow:hidden;}
     .pc-photo img{width:100%;height:100%;object-fit:cover;}
     .pc-info{flex:1;min-width:0;}
+    .pc-role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;}
+    .rb-딜러{background:rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316;}
+    .rb-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
+    .rb-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
+    .rb-유동{background:rgba(168,85,247,.2);color:#a855f7;border:1px solid #a855f7;}
     .pc-grade-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
       border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:5px;}
     .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
@@ -141,15 +146,15 @@
     .order-cards{display:flex;gap:8px;flex-wrap:wrap;}
     .order-card{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default;}
     .order-card.current .oc-photo{border-color:var(--accent);box-shadow:0 0 10px rgba(245,158,11,.5);}
-    .oc-photo{width:60px;height:60px;border-radius:8px;overflow:hidden;background:var(--surface2);
+    .oc-photo{width:70px;height:70px;border-radius:8px;overflow:hidden;background:var(--surface2);
       border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
     .oc-photo img{width:100%;height:100%;object-fit:cover;}
     .oc-badge{display:flex;gap:3px;align-items:center;}
-    .oc-grade{font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:3px;}
+    .oc-grade{font-size:.68rem;font-weight:700;padding:1px 4px;border-radius:3px;}
     .oc-grade-고{background:rgba(239,68,68,.2);color:#ef4444;}
     .oc-grade-저{background:rgba(59,130,246,.2);color:#3b82f6;}
     .oc-tier{font-size:.55rem;color:rgba(255,255,255,.7);background:rgba(0,0,0,.4);padding:1px 4px;border-radius:3px;}
-    .oc-name{font-size:.62rem;color:var(--text);max-width:62px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .oc-name{font-size:.75rem;color:var(--text);max-width:74px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .oc-arrow{font-size:.7rem;color:var(--muted);align-self:center;padding-bottom:16px;}
 
     /* ── 팀 패널 ── */
@@ -157,24 +162,24 @@
     .team-panel.mine{border-color:rgba(255,255,255,.5);}
     .team-panel.leading{border-color:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.4);}
     .team-panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;}
-    .team-panel-name{font-size:.82rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.5px;}
-    .team-panel-pts{font-family:'Black Han Sans',sans-serif;font-size:1rem;color:rgba(255,255,255,.95);}
-    .team-panel-pts span{font-size:.6rem;font-family:'Pretendard',sans-serif;font-weight:400;opacity:.7;margin-left:2px;}
+    .team-panel-name{font-size:1rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.5px;}
+    .team-panel-pts{font-family:'Black Han Sans',sans-serif;font-size:1.2rem;color:rgba(255,255,255,.95);}
+    .team-panel-pts span{font-size:.75rem;font-family:'Pretendard',sans-serif;font-weight:400;opacity:.7;margin-left:2px;}
     /* 멤버 그리드: 팀장 + 팀원들 같은 크기로 */
     .team-members-grid{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 10px;}
-    .tm-card{width:72px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+    .tm-card{width:82px;display:flex;flex-direction:column;align-items:center;gap:3px;}
     .tm-card.empty .tm-photo{border:2px dashed rgba(255,255,255,.15);background:rgba(0,0,0,.25);}
-    .tm-photo{width:72px;height:72px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.3);
+    .tm-photo{width:82px;height:82px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.3);
       border:2px solid rgba(255,255,255,.25);position:relative;
       display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .tm-photo img{width:100%;height:100%;object-fit:cover;}
     .tm-photo-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.78);
-      font-size:.65rem;font-weight:700;text-align:center;padding:3px 2px;color:#fff;
+      font-size:.78rem;font-weight:700;text-align:center;padding:3px 2px;color:#fff;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .tm-info{width:100%;text-align:center;}
-    .tm-pts{font-size:.68rem;font-weight:700;color:#f59e0b;line-height:1.3;}
-    .tm-role{font-size:.6rem;color:rgba(255,255,255,.55);line-height:1.3;}
-    .tm-badge-leader{font-size:.55rem;background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);
+    .tm-pts{font-size:.82rem;font-weight:700;color:#f59e0b;line-height:1.3;}
+    .tm-role{font-size:.72rem;color:rgba(255,255,255,.55);line-height:1.3;}
+    .tm-badge-leader{font-size:.72rem;background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);
       border-radius:3px;padding:1px 5px;border:1px solid rgba(255,255,255,.2);display:inline-block;}
     .team-panel-list{display:flex;flex-direction:column;}
 
@@ -226,7 +231,10 @@
             <div class="hero-icon-wrap" id="pc-heroes" style="justify-content:center;margin-bottom:0;"></div>
           </div>
           <div class="pc-info">
-            <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+              <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
+              <div class="pc-role-badge" id="pc-role-badge"></div>
+            </div>
             <div class="pc-name" id="pc-name">-</div>
             <div id="pc-meta" style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;"></div>
             <div class="pc-tiers" id="pc-tiers"></div>
@@ -445,28 +453,117 @@
 
   // ── 방 비밀번호 검증 후 입장
   async function checkRoomPwThenStart() {
-    // 팀장 토큰이 있거나 관전자 역할이면 비밀번호 체크 (관전자도 비번 필요)
-    // host는 auction.html에 접근하지 않으므로 모두 검증
     const { ref, get } = window._dbFns;
     try {
-      const snap = await get(ref(window._db, `rooms/${ROOM}/meta/roomPw`));
-      const pw   = snap.exists() ? snap.val() : '';
-      if (!pw) {
-        // 비밀번호 없음 → 바로 입장
-        startListening();
-        return;
-      }
-      // 세션에 이미 인증된 방이면 스킵
+      // 방 전체 메타 + 팀 정보 가져오기
+      const [metaSnap, teamsSnap] = await Promise.all([
+        get(ref(window._db, `rooms/${ROOM}/meta`)),
+        get(ref(window._db, `rooms/${ROOM}/teams`)),
+      ]);
+      const meta  = metaSnap.exists()  ? metaSnap.val()  : {};
+      const teams = teamsSnap.exists() ? teamsSnap.val() : {};
+      const pw    = meta.roomPw || '';
+
+      // 세션에 이미 인증됐으면 스킵
       const sessionKey = `roomAuth_${ROOM}`;
-      if (sessionStorage.getItem(sessionKey) === pw) {
+      if (sessionStorage.getItem(sessionKey) === ROOM + '_ok') {
         startListening();
         return;
       }
-      // 비밀번호 모달 표시
-      showPwModal(pw);
+
+      // 팀장 링크면 → 본인 확인 모달 먼저
+      if (IS_LEADER) {
+        const teamName = teams[TEAM_KEY]?.name || TEAM_KEY;
+        showLeaderConfirmModal(meta.title || '경매', teamName, pw, teams);
+      } else {
+        // 관전자/일반
+        if (pw) {
+          showPwModal(pw);
+        } else {
+          startListening();
+        }
+      }
     } catch(e) {
-      startListening(); // 오류 시 그냥 입장
+      startListening();
     }
+  }
+
+  function showLeaderConfirmModal(roomTitle, leaderName, correctPw, teams) {
+    const overlay = document.createElement('div');
+    overlay.id = 'confirm-modal';
+    overlay.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(10,14,26,.97);
+      backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;`;
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;
+          padding:40px 36px;width:100%;max-width:420px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+        <div style="font-size:2.8rem;margin-bottom:16px;">🏅</div>
+        <div style="font-size:.78rem;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;">팀장 입장 확인</div>
+        <div style="font-family:'Black Han Sans',sans-serif;font-size:1.6rem;color:var(--accent);margin-bottom:20px;">${roomTitle}</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px 24px;margin-bottom:20px;">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">이 링크의 팀장</div>
+          <div style="font-family:'Black Han Sans',sans-serif;font-size:2rem;color:#fff;">${leaderName}</div>
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
+          위 정보가 맞습니까?<br>
+          <span style="color:#f97316;font-size:.72rem;">⚠️ 방송 중일 경우 링크 유출에 주의해 주세요</span>
+        </div>
+        <div id="confirm-pw-section" style="display:none;margin-bottom:16px;">
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px;">🔒 방 비밀번호를 입력하세요</div>
+          <input type="password" id="confirm-pw-input" placeholder="비밀번호"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+            color:var(--text);padding:11px 16px;font-size:1rem;font-family:inherit;outline:none;
+            text-align:center;letter-spacing:3px;margin-bottom:6px;"
+            onkeydown="if(event.key==='Enter')document.getElementById('confirm-ok-btn').click()" />
+          <div id="confirm-pw-err" style="color:var(--danger);font-size:.75rem;min-height:16px;"></div>
+        </div>
+        <button id="confirm-ok-btn"
+          style="width:100%;padding:14px;background:linear-gradient(135deg,#22c55e,#16a34a);
+          border:none;border-radius:12px;color:#fff;font-weight:700;font-family:inherit;
+          font-size:1rem;cursor:pointer;margin-bottom:10px;"
+          onclick="(function(){
+            const hasPw = '${correctPw}' !== '';
+            const pwSection = document.getElementById('confirm-pw-section');
+            if (hasPw && pwSection.style.display === 'none') {
+              pwSection.style.display = '';
+              document.getElementById('confirm-pw-input').focus();
+              document.getElementById('confirm-ok-btn').textContent = '입장하기';
+              return;
+            }
+            if (hasPw) {
+              const val = document.getElementById('confirm-pw-input').value;
+              if (val !== '${correctPw}') {
+                document.getElementById('confirm-pw-err').textContent = '비밀번호가 틀렸습니다';
+                document.getElementById('confirm-pw-input').value = '';
+                document.getElementById('confirm-pw-input').focus();
+                setTimeout(()=>{ document.getElementById('confirm-pw-err').textContent=''; },2000);
+                return;
+              }
+            }
+            sessionStorage.setItem('roomAuth_${ROOM}', '${ROOM}_ok');
+            document.getElementById('confirm-modal').remove();
+            markLeaderOnline();
+            startListening();
+          })()">맞습니다${correctPw ? ' →' : ' · 입장하기'}</button>
+        <button onclick="location.href='index.html'"
+          style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;font-family:inherit;">
+          ← 돌아가기
+        </button>
+      </div>`;
+    document.body.appendChild(overlay);
+    // 비번 없으면 pw section 숨김, 버튼 텍스트 조정
+    if (!correctPw) {
+      overlay.querySelector('#confirm-ok-btn').textContent = '맞습니다 · 입장하기';
+    }
+  }
+
+  async function markLeaderOnline() {
+    // 팀장 온라인 상태 Firebase에 기록
+    if (!IS_LEADER) return;
+    const { ref, update } = window._dbFns;
+    await update(ref(window._db), {
+      [`rooms/${ROOM}/teams/${TEAM_KEY}/leaderOnline`]: true,
+      [`rooms/${ROOM}/teams/${TEAM_KEY}/leaderJoinedAt`]: Date.now(),
+    });
   }
 
   function showPwModal(correctPw) {
@@ -537,21 +634,22 @@
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
     gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
 
+    // 포지션 배지
+    const roleClassMap = {'딜러':'rb-딜러','탱커':'rb-탱커','힐러':'rb-힐러','유동':'rb-유동'};
+    const rb = document.getElementById('pc-role-badge');
+    if (rb && p.role) {
+      rb.className = 'pc-role-badge ' + (roleClassMap[p.role]||'rb-유동');
+      rb.textContent = p.role;
+    } else if (rb) { rb.textContent = ''; }
+
     const photoEl = document.getElementById('pc-photo');
     if (p.photo) { photoEl.innerHTML = `<img src="${p.photo}" />`; }
     else { photoEl.innerHTML = '👤'; }
 
-    // 이름 + 포지션 한 줄에
-    const roleColor = p.grade === '고' ? '#ef4444' : '#3b82f6';
-    const roleBg    = p.grade === '고' ? 'rgba(239,68,68,.15)' : 'rgba(59,130,246,.15)';
-    document.getElementById('pc-name').innerHTML = `
-      <span>${p.name}</span>
-      ${p.role ? `<span style="font-family:'Pretendard',sans-serif;font-size:1rem;font-weight:700;
-        padding:4px 12px;border-radius:7px;margin-left:10px;vertical-align:middle;
-        background:${roleBg};color:${roleColor};border:1px solid ${roleColor};">${p.role}</span>` : ''}
-    `;
+    // 닉네임만 (포지션 배지 별도 표시)
+    document.getElementById('pc-name').textContent = p.name;
 
-    // 스타일만 아래에
+    // 스타일 아래에
     const metaEl = document.getElementById('pc-meta');
     if (metaEl) metaEl.innerHTML = p.style
       ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '';
@@ -666,17 +764,17 @@
           <div style="font-size:.6rem;color:var(--text);max-width:56px;text-align:center;
             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
             ${isDone ? 'text-decoration:line-through;' : ''}">${p.name}</div>
-          ${isDone ? `<div style="font-size:.55rem;color:var(--success);">▸ ${teamName}</div>` : ''}
+          ${isDone ? `<div style="font-size:.7rem;color:var(--success);">▸ ${teamName}</div>` : ''}
         </div>`;
       }).join('');
 
       return `<div style="margin-bottom:12px;${isDoneGroup?'opacity:.5':''}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;
+          <span style="font-size:.82rem;font-weight:700;padding:3px 10px;border-radius:10px;
             background:${gradeBg};color:${gradeColor};border:1px solid ${gradeColor};">
             ${g.grade==="고"?"고티어":"저티어"} ${g.role}
           </span>
-          <span style="font-size:.65rem;color:var(--muted);">${g.players.filter(({p})=>p.assignedTo==null).length}명 남음</span>
+          <span style="font-size:.78rem;color:var(--muted);">${g.players.filter(({p})=>p.assignedTo==null).length}명 남음</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">${playerCards}</div>
       </div>`;
@@ -730,7 +828,7 @@
 
   function renderTeams() {
     const { teams, players, auction, meta } = roomData;
-    const maxSlots  = (meta.membersPerTeam || 6) - 1; // 팀원 수 (팀장 제외)
+    const maxSlots  = 5; // 팀원 슬롯 5개 (팀장 포함 총 6칸 고정)
     const logMap    = {};
     (auction.log || []).forEach(e => { logMap[e.pid] = e.price; });
 
@@ -760,7 +858,9 @@
         const p   = pid ? players[pid] : null;
         if (p) {
           const gradeColor = p.grade === '고' ? '#ef4444' : '#3b82f6';
-          const gradeTxt   = p.grade === '고' ? '🔴 고' : '🔵 저';
+          const gradeTxt   = p.grade === '고' ? '🔴 고티어' : '🔵 저티어';
+          const roleColorMap = {'딜러':'#f97316','탱커':'#3b82f6','힐러':'#22c55e','유동':'#a855f7'};
+          const roleColor  = roleColorMap[p.role] || 'rgba(255,255,255,.55)';
           const price      = logMap[pid] != null ? `${logMap[pid]}pt` : '';
           const photoInner = p.photo
             ? `<img src="${p.photo}" />`
@@ -772,7 +872,8 @@
             </div>
             <div class="tm-info">
               ${price ? `<div class="tm-pts">${price}</div>` : ''}
-              <div class="tm-role" style="color:${gradeColor};">${gradeTxt} ${p.role||''}</div>
+              <div class="tm-role" style="color:${gradeColor};">${gradeTxt}</div>
+              ${p.role ? `<div class="tm-role" style="color:${roleColor};">${p.role}</div>` : ''}
             </div>
           </div>`;
         }

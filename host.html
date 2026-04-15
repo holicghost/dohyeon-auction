@@ -68,19 +68,23 @@
     .
 
     .pc-top{display:flex;gap:16px;align-items:flex-start;margin-top:8px;}
-    .pc-photo{width:80px;height:80px;border-radius:10px;object-fit:cover;
+    .pc-photo{width:140px;height:140px;border-radius:12px;object-fit:cover;
       background:var(--surface2);border:2px solid var(--border);flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;font-size:2rem;}
+      display:flex;align-items:center;justify-content:center;font-size:3rem;}
     .pc-info{flex:1;min-width:0;}
+    .pc-role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;}
+    .rb-딜러{background:rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316;}
+    .rb-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
+    .rb-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
+    .rb-유동{background:rgba(168,85,247,.2);color:#a855f7;border:1px solid #a855f7;}
     .pc-grade-badge{
       display:inline-flex;align-items:center;gap:4px;
       padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;
-      margin-bottom:6px;
     }
     .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
     .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .
-    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.2rem;line-height:1.1;margin-bottom:8px;}
+    .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.3rem;line-height:1.1;margin-bottom:7px;}
     .pc-tiers{display:flex;gap:12px;margin-bottom:8px;}
     .tier-item{display:flex;flex-direction:column;gap:2px;}
     .tier-label{font-size:.65rem;color:var(--muted);}
@@ -88,7 +92,7 @@
     .pc-heroes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
     .hero-tag{background:var(--surface2);border:1px solid var(--border);
       border-radius:6px;padding:3px 8px;font-size:.75rem;color:var(--text);}
-    .pc-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.78rem;}
+    .pc-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:.78rem;margin-bottom:6px;align-items:center;}
     .pc-meta-item{display:flex;flex-direction:column;gap:2px;}
     .pc-meta-label{font-size:.65rem;color:var(--muted);}
     .pc-meta-val{color:var(--text);}
@@ -127,7 +131,7 @@
 
     /* 영웅 아이콘 */
     .hero-icon-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-    .hero-icon{width:48px;height:48px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
+    .hero-icon{width:46px;height:46px;border-radius:8px;overflow:hidden;border:2px solid var(--border);
       background:var(--surface2);flex-shrink:0;position:relative;}
     .hero-icon img{width:100%;height:100%;object-fit:cover;}
     .hero-icon-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);
@@ -309,7 +313,10 @@
               <div class="hero-icon-wrap" id="pc-heroes" style="justify-content:center;margin-bottom:0;"></div>
             </div>
             <div class="pc-info">
-              <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+                <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
+                <div class="pc-role-badge" id="pc-role-badge"></div>
+              </div>
               <div class="pc-name" id="pc-name">-</div>
               <div class="pc-tiers" id="pc-tiers"></div>
               <div class="pc-meta" id="pc-meta"></div>
@@ -569,7 +576,7 @@
     document.getElementById('main-layout').style.display      = st==='waiting' ? 'none' : 'grid';
     document.getElementById('auction-screen').style.display   = (st==='preview'||st==='bidding') ? '' : 'none';
     document.getElementById('finished-screen').style.display  = st==='finished' ? '' : 'none';
-    if (st==='waiting') renderLotterySlots();
+    if (st==='waiting') { renderLotterySlots(); }
     if (st==='preview'||st==='bidding') renderAuction();
     if (st==='finished') stopTimer();
     renderTeams(); renderQueue(); renderLinks(); renderLog();
@@ -590,14 +597,15 @@
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
     gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
 
-    const roleColorH = p.grade === '고' ? '#ef4444' : '#3b82f6';
-    const roleBgH    = p.grade === '고' ? 'rgba(239,68,68,.15)' : 'rgba(59,130,246,.15)';
-    document.getElementById('pc-name').innerHTML = `
-      <span>${p.name}</span>
-      ${p.role ? `<span style="font-family:'Pretendard',sans-serif;font-size:1rem;font-weight:700;
-        padding:4px 12px;border-radius:7px;margin-left:10px;vertical-align:middle;
-        background:${roleBgH};color:${roleColorH};border:1px solid ${roleColorH};">${p.role}</span>` : ''}
-    `;
+    // 포지션 배지
+    const roleClassMap = {'딜러':'rb-딜러','탱커':'rb-탱커','힐러':'rb-힐러','유동':'rb-유동'};
+    const rb = document.getElementById('pc-role-badge');
+    if (rb && p.role) {
+      rb.className = 'pc-role-badge ' + (roleClassMap[p.role]||'rb-유동');
+      rb.textContent = p.role;
+    } else if (rb) { rb.textContent = ''; }
+
+    document.getElementById('pc-name').textContent = p.name;
 
     // 티어 정보
     document.getElementById('pc-tiers').innerHTML = `
@@ -611,11 +619,12 @@
     document.getElementById('pc-heroes').className = 'hero-icon-wrap';
     document.getElementById('pc-heroes').innerHTML = renderHeroes(heroes);
 
-    // 메타 정보
-    document.getElementById('pc-meta').innerHTML = `
-      <div class="pc-meta-item"><div class="pc-meta-label">포지션</div><div class="pc-meta-val">${p.role||'-'}</div></div>
-      <div class="pc-meta-item"><div class="pc-meta-label">플레이 스타일</div><div class="pc-meta-val">${p.style||'-'}</div></div>
-    `;
+    // 메타 정보 (포지션+스타일 인라인 배지)
+    const metaHtml = [
+      p.role  ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 9px;font-size:.78rem;">${p.role}</span>` : '',
+      p.style ? `<span style="color:var(--muted);font-size:.8rem;">${p.style}</span>` : '',
+    ].join('');
+    document.getElementById('pc-meta').innerHTML = metaHtml;
 
     // 소개
     const introEl = document.getElementById('pc-intro');
@@ -760,6 +769,13 @@
   let _shuffledOrder = null; // 추첨 결과 순서 저장
 
   function startAuctionWithCountdown() {
+    // 미접속 팀장 확인
+    const teams = Object.entries(roomData?.teams || {});
+    const offline = teams.filter(([,t]) => !t.leaderOnline).map(([,t]) => t.name);
+    if (offline.length > 0) {
+      const go = confirm(`아직 접속하지 않은 팀장이 있습니다:\n\n${offline.map(n=>'• '+n).join('\n')}\n\n그래도 경매를 시작하시겠습니까?`);
+      if (!go) return;
+    }
     const overlay = document.getElementById('start-countdown-overlay');
     overlay.style.display = 'flex';
     let sec = 10;
@@ -1124,13 +1140,28 @@
       const photo = t.photo
         ? `<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;" />`
         : '👤';
+      const isOnline  = !!t.leaderOnline;
+      const onlineDot = isOnline
+        ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:3px;"></span>`
+        : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:3px;"></span>`;
+      const onlineTxt = isOnline ? '접속 완료' : '미접속';
+      const onlineClr = isOnline ? '#22c55e' : '#ef4444';
       return `<div id="ls-${tk}" style="display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .3s;">
         <div style="width:54px;height:54px;border-radius:8px;overflow:hidden;background:var(--surface2);
-          border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${photo}</div>
+          border:2px solid ${isOnline?'#22c55e':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${photo}</div>
         <div style="font-size:.75rem;font-weight:700;">${t.name}</div>
+        <div style="font-size:.65rem;color:${onlineClr};display:flex;align-items:center;">${onlineDot}${onlineTxt}</div>
         <div id="ls-order-${tk}" style="font-size:.7rem;color:var(--muted);">?</div>
       </div>`;
     }).join('');
+
+    // 전체 미접속 현황 표시
+    const total   = teams.length;
+    const online  = teams.filter(([,t]) => t.leaderOnline).length;
+    const statusEl = document.getElementById('lottery-status-msg');
+    if (online < total && statusEl.textContent === '시작 버튼을 누르면 팀장 순서를 추첨합니다') {
+      statusEl.innerHTML = `팀장 접속 현황: <span style="color:#22c55e;font-weight:700;">${online}</span> / ${total}명 접속 완료`;
+    }
   }
 
   // ── 랜덤 추첨 (두구두구 → 짜잔 연출)
