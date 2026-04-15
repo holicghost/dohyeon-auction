@@ -68,8 +68,8 @@
     .
 
     .pc-top{display:flex;gap:16px;align-items:flex-start;margin-top:8px;}
-    .pc-photo{width:140px;height:140px;border-radius:12px;object-fit:cover;
-      background:var(--surface2);border:2px solid var(--border);flex-shrink:0;
+    .pc-photo{width:140px;height:140px;border-radius:12px;background:var(--surface2);
+      border:2px solid var(--border);flex-shrink:0;overflow:hidden;
       display:flex;align-items:center;justify-content:center;font-size:3rem;}
     .pc-info{flex:1;min-width:0;}
     .pc-role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;}
@@ -85,7 +85,7 @@
     .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .
     .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.3rem;line-height:1.1;margin-bottom:7px;}
-    .pc-tiers{display:flex;gap:12px;margin-bottom:8px;}
+    .pc-tiers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;}
     .tier-item{display:flex;flex-direction:column;gap:2px;}
     .tier-label{font-size:.65rem;color:var(--muted);}
     .tier-val{font-size:.85rem;font-weight:700;color:var(--text);}
@@ -318,8 +318,8 @@
                 <div class="pc-role-badge" id="pc-role-badge"></div>
               </div>
               <div class="pc-name" id="pc-name">-</div>
+              <div id="pc-meta" style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;"></div>
               <div class="pc-tiers" id="pc-tiers"></div>
-              <div class="pc-meta" id="pc-meta"></div>
             </div>
           </div>
           <div class="pc-intro" id="pc-intro" style="display:none;"></div>
@@ -583,16 +583,13 @@
   }
 
   function renderAuction() {
-    const { auction, players } = roomData;
+    const { auction, players, teams, meta } = roomData;
     if (!auction.currentPlayer) return;
     const p = players[auction.currentPlayer];
     const isPreview = auction.status === 'preview';
+    const grade = p.grade || '고';
 
-    // 선수 카드
-    const grade = p.grade || '중';
     document.getElementById('grade-banner').className = `grade-banner grade-${grade==='고'?'고':'저'}`;
-
-    const gbMap = { '고':'gb-고 🔴 고티어 매물', '중':'gb-중 🟡 중티어 매물', '하':'gb-하 🔵 하티어 매물' };
     const gb = document.getElementById('pc-grade-badge');
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
     gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
@@ -605,33 +602,29 @@
       rb.textContent = p.role;
     } else if (rb) { rb.textContent = ''; }
 
+    const photoEl = document.getElementById('pc-photo');
+    if (p.photo) { photoEl.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" />`; }
+    else { photoEl.innerHTML = '👤'; }
+
     document.getElementById('pc-name').textContent = p.name;
 
-    // 티어 정보
+    // 스타일
+    const metaEl = document.getElementById('pc-meta');
+    if (metaEl) metaEl.innerHTML = p.style
+      ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '';
+
     document.getElementById('pc-tiers').innerHTML = `
       <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
       <div class="tier-item"><div class="tier-label">전 시즌</div><div class="tier-val">${p.prevTier||'-'}</div></div>
       <div class="tier-item"><div class="tier-label">역대 최고</div><div class="tier-val" style="color:var(--accent)">${p.peakTier||'-'}</div></div>
     `;
 
-    // 선호 영웅 — 이미지로 표시
-    const heroes = [p.hero1,p.hero2,p.hero3].filter(Boolean);
-    document.getElementById('pc-heroes').className = 'hero-icon-wrap';
-    document.getElementById('pc-heroes').innerHTML = renderHeroes(heroes);
+    document.getElementById('pc-heroes').innerHTML = renderHeroes([p.hero1,p.hero2,p.hero3]);
 
-    // 메타 정보 (포지션+스타일 인라인 배지)
-    const metaHtml = [
-      p.role  ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 9px;font-size:.78rem;">${p.role}</span>` : '',
-      p.style ? `<span style="color:var(--muted);font-size:.8rem;">${p.style}</span>` : '',
-    ].join('');
-    document.getElementById('pc-meta').innerHTML = metaHtml;
-
-    // 소개
     const introEl = document.getElementById('pc-intro');
     if (p.intro) { introEl.textContent = `💬 ${p.intro}`; introEl.style.display=''; }
     else { introEl.style.display='none'; }
 
-    // 입찰가
     document.getElementById('bid-amount').textContent = `${auction.currentBid||0} pt`;
     document.getElementById('bid-team').textContent = auction.currentLeader
       ? `👑 ${getTeamName(auction.currentLeader)} 입찰 중` : '입찰자 없음';
