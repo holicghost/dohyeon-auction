@@ -660,6 +660,8 @@
     }
 
     if (!auction.paused) {
+      // 타이머 재시작 시 transLock 초기화 (새 선수로 넘어온 경우)
+      transLock = false;
       startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
     }
 
@@ -726,34 +728,42 @@
   async function autoSettle() {
     if (roomData?.auction?.status !== 'bidding') { transLock = false; return; }
     const { auction, teams } = roomData;
-
-    if (auction.currentLeader) {
-      const tk  = auction.currentLeader;
-      const pid = auction.currentPlayer;
-      const bid = auction.currentBid;
-      const upd = {};
-      upd[`rooms/${ROOM}/teams/${tk}/members`]        = [...(teams[tk].members||[]), pid];
-      upd[`rooms/${ROOM}/teams/${tk}/points`]         = teams[tk].points - bid;
-      upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = tk;
-      const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
-      upd[`rooms/${ROOM}/auction/log`] = log;
-      await nextPlayer(upd);
-      showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
-    } else {
-      // 입찰자 없음 → 자동 유찰
-      await nextPlayer({});
-      showToast('⏰ 시간 초과 — 자동 유찰');
+    try {
+      if (auction.currentLeader) {
+        const tk  = auction.currentLeader;
+        const pid = auction.currentPlayer;
+        const bid = auction.currentBid;
+        const upd = {};
+        upd[`rooms/${ROOM}/teams/${tk}/members`]        = [...(teams[tk].members||[]), pid];
+        upd[`rooms/${ROOM}/teams/${tk}/points`]         = teams[tk].points - bid;
+        upd[`rooms/${ROOM}/players/${pid}/assignedTo`]  = tk;
+        const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
+        upd[`rooms/${ROOM}/auction/log`] = log;
+        await nextPlayer(upd);
+        showToast(`🔨 자동 낙찰! ${getTeamName(tk)} (-${bid}pt)`);
+      } else {
+        await nextPlayer({});
+        showToast('⏰ 시간 초과 — 자동 유찰');
+      }
+    } catch(e) {
+      console.error('autoSettle 오류:', e);
+    } finally {
+      transLock = false;
     }
-    transLock = false;
   }
 
   async function transitionToBidding() {
     if (roomData?.auction?.status !== 'preview') { transLock = false; return; }
     const { ref, update } = window._dbFns;
-    await update(ref(window._db, `rooms/${ROOM}/auction`), {
-      status: 'bidding', timerEndsAt: Date.now() + BID_SEC * 1000
-    });
-    transLock = false;
+    try {
+      await update(ref(window._db, `rooms/${ROOM}/auction`), {
+        status: 'bidding', timerEndsAt: Date.now() + BID_SEC * 1000
+      });
+    } catch(e) {
+      console.error('transitionToBidding 오류:', e);
+    } finally {
+      transLock = false;
+    }
   }
 
   // ── 경매 시작
