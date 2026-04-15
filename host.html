@@ -266,7 +266,9 @@
 
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn btn-primary" id="start-btn" onclick="startWithLottery()">🎲 팀장 순서 추첨</button>
-      <button class="btn btn-primary" id="begin-auction-btn" onclick="startAuction()"
+      <button class="btn btn-ghost" id="retry-btn" onclick="retryLottery()"
+        style="display:none;">🔄 다시 뽑기</button>
+      <button class="btn btn-primary" id="begin-auction-btn" onclick="startAuctionWithCountdown()"
         style="display:none;background:linear-gradient(135deg,#22c55e,#16a34a);">🏁 경매 시작!</button>
     </div>
   </div>
@@ -302,12 +304,14 @@
         <div class="player-card" id="player-card">
           <div class="grade-banner grade-고" id="grade-banner"></div>
           <div class="pc-top">
-            <div class="pc-photo" id="pc-photo">👤</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">
+              <div class="pc-photo" id="pc-photo">👤</div>
+              <div class="hero-icon-wrap" id="pc-heroes" style="justify-content:center;margin-bottom:0;"></div>
+            </div>
             <div class="pc-info">
-              <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어 매물</div>
+              <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
               <div class="pc-name" id="pc-name">-</div>
               <div class="pc-tiers" id="pc-tiers"></div>
-              <div class="pc-heroes" id="pc-heroes"></div>
               <div class="pc-meta" id="pc-meta"></div>
             </div>
           </div>
@@ -373,6 +377,21 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 경매 시작 전 전체화면 카운트다운 -->
+<div id="start-countdown-overlay" style="display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(10,14,26,.96);backdrop-filter:blur(10px);
+  display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+  <div style="font-size:1.1rem;color:var(--muted);margin-bottom:16px;letter-spacing:2px;">잠시 후 경매가 시작됩니다</div>
+  <div id="start-count-num" style="font-family:'Black Han Sans',sans-serif;font-size:10rem;
+    line-height:1;color:var(--accent);transition:transform .15s,color .3s;"></div>
+  <div style="font-size:1rem;color:var(--muted);margin-top:16px;">초</div>
+  <button onclick="skipStartCountdown()"
+    style="margin-top:32px;padding:10px 28px;background:none;border:1px solid var(--border);
+    border-radius:10px;color:var(--muted);font-family:inherit;font-size:.85rem;cursor:pointer;">
+    ⏩ 바로 시작
+  </button>
+</div>
 
 <!-- 포지션 전환 대기 오버레이 -->
 <div class="break-overlay" id="break-overlay" style="display:none;">
@@ -569,9 +588,16 @@
     const gbMap = { '고':'gb-고 🔴 고티어 매물', '중':'gb-중 🟡 중티어 매물', '하':'gb-하 🔵 하티어 매물' };
     const gb = document.getElementById('pc-grade-badge');
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
-    gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
+    gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
 
-    document.getElementById('pc-name').textContent = p.name;
+    const roleColorH = p.grade === '고' ? '#ef4444' : '#3b82f6';
+    const roleBgH    = p.grade === '고' ? 'rgba(239,68,68,.15)' : 'rgba(59,130,246,.15)';
+    document.getElementById('pc-name').innerHTML = `
+      <span>${p.name}</span>
+      ${p.role ? `<span style="font-family:'Pretendard',sans-serif;font-size:1rem;font-weight:700;
+        padding:4px 12px;border-radius:7px;margin-left:10px;vertical-align:middle;
+        background:${roleBgH};color:${roleColorH};border:1px solid ${roleColorH};">${p.role}</span>` : ''}
+    `;
 
     // 티어 정보
     document.getElementById('pc-tiers').innerHTML = `
@@ -650,7 +676,7 @@
     const np = players[remaining[0]];
     const g  = np?.grade || '중';
     const ngb = document.getElementById('next-grade-badge');
-    ngb.textContent = g==='고'?'🔴 고':g==='중'?'🟡 중':'🔵 하';
+    ngb.textContent = g==='고'?'🔴 고티어':'🔵 저티어';
     ngb.className = 'next-grade-badge ' + (g==='고'?'gb-고':'gb-저');
     document.getElementById('next-name').textContent = np?.name || '-';
     document.getElementById('next-role').textContent = np?.role || '-';
@@ -729,13 +755,76 @@
   }
 
   // ── 경매 시작
+  // ── 경매 시작 전 전체화면 카운트다운
+  let _startCountInterval = null;
+  let _shuffledOrder = null; // 추첨 결과 순서 저장
+
+  function startAuctionWithCountdown() {
+    const overlay = document.getElementById('start-countdown-overlay');
+    overlay.style.display = 'flex';
+    let sec = 10;
+    const numEl = document.getElementById('start-count-num');
+    function tick() {
+      numEl.textContent = sec;
+      numEl.style.transform = 'scale(1.15)';
+      numEl.style.color = sec <= 3 ? 'var(--danger)' : 'var(--accent)';
+      setTimeout(() => { numEl.style.transform = 'scale(1)'; }, 150);
+      if (sec <= 0) {
+        clearInterval(_startCountInterval);
+        overlay.style.display = 'none';
+        startAuction();
+        return;
+      }
+      sec--;
+    }
+    tick();
+    _startCountInterval = setInterval(tick, 1000);
+  }
+
+  function skipStartCountdown() {
+    clearInterval(_startCountInterval);
+    document.getElementById('start-countdown-overlay').style.display = 'none';
+    startAuction();
+  }
+
+  // ── 추첨 다시하기
+  function retryLottery() {
+    _shuffledOrder = null;
+    const msg = document.getElementById('lottery-status-msg');
+    msg.textContent = '시작 버튼을 누르면 팀장 순서를 추첨합니다';
+    msg.style.color = 'var(--muted)';
+    document.getElementById('start-btn').style.display = '';
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('retry-btn').style.display = 'none';
+    document.getElementById('begin-auction-btn').style.display = 'none';
+    // 슬롯 초기화
+    if (roomData) {
+      Object.keys(roomData.teams || {}).forEach(tk => {
+        const el   = document.getElementById('ls-order-' + tk);
+        const card = document.getElementById('ls-' + tk);
+        if (el)   { el.textContent = '?'; el.style.color = 'var(--muted)'; el.style.fontWeight = '400'; }
+        if (card) { card.style.transform = ''; card.style.filter = ''; }
+      });
+    }
+  }
+
   async function startAuction() {
-    const { ref, update } = window._dbFns;
+    const { ref, update, get } = window._dbFns;
+
+    // 추첨 순서가 있으면 → 팀장별 입찰 포인트 순서 조정
+    // (추첨 순서는 팀장 입찰 순서이지 선수 경매 순서와 다름 — 여기선 meta에 저장)
+    const upd = {};
+    if (_shuffledOrder && _shuffledOrder.length > 0) {
+      upd[`rooms/${ROOM}/meta/leaderOrder`] = _shuffledOrder;
+    }
+
     const first = roomData.auction.order[0];
-    await update(ref(window._db, `rooms/${ROOM}/auction`), {
-      status:'preview', currentPlayer:first, currentBid:0,
-      currentLeader:null, timerEndsAt: Date.now() + PREVIEW_SEC * 1000
-    });
+    upd[`rooms/${ROOM}/auction/status`]        = 'preview';
+    upd[`rooms/${ROOM}/auction/currentPlayer`] = first;
+    upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+    upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+    upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
+    await update(ref(window._db), upd);
   }
 
   // ── 낙찰
@@ -1129,11 +1218,14 @@
               }
               // 마지막 공개
               if (i === shuffled.length - 1) {
+                // 추첨 순서 저장
+                _shuffledOrder = shuffled;
                 setTimeout(() => {
-                  msg.textContent = `✅ 추첨 완료! 1순위부터 입찰합니다`;
+                  msg.textContent = `✅ 추첨 완료! 1순위: ${roomData.teams[shuffled[0]]?.name}`;
                   msg.style.color = 'var(--success)';
-                  // 경매 시작 버튼 표시
+                  // 경매 시작 + 다시하기 버튼 표시
                   document.getElementById('begin-auction-btn').style.display = '';
+                  document.getElementById('retry-btn').style.display = '';
                   btn.style.display = 'none';
                 }, 400);
               }

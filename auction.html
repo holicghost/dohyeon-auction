@@ -40,7 +40,7 @@
     .badge-obs{background:var(--surface2);border:1px solid var(--border);border-radius:20px;
       padding:4px 12px;font-size:.8rem;color:var(--muted);}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
-    .card-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+    .card-title{font-size:.82rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700;}
 
     /* ── 2컬럼 레이아웃 ── */
     .auction-layout{display:grid;grid-template-columns:320px 1fr 280px;gap:12px;align-items:start;}
@@ -133,7 +133,7 @@
     /* ── 오른쪽 패널: 경매 순서 ── */
     .right-panel{display:flex;flex-direction:column;gap:12px;}
     .order-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
-    .order-section-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;
+    .order-section-title{font-size:.82rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700;
       display:flex;align-items:center;gap:6px;}
     .order-tier-badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;}
     .tb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
@@ -221,13 +221,15 @@
       <div class="player-card" id="player-card">
         <div class="grade-banner grade-고" id="grade-banner"></div>
         <div class="pc-top">
-          <div class="pc-photo" id="pc-photo">👤</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">
+            <div class="pc-photo" id="pc-photo">👤</div>
+            <div class="hero-icon-wrap" id="pc-heroes" style="justify-content:center;margin-bottom:0;"></div>
+          </div>
           <div class="pc-info">
-            <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어 매물</div>
+            <div class="pc-grade-badge gb-고" id="pc-grade-badge">🔴 고티어</div>
             <div class="pc-name" id="pc-name">-</div>
             <div id="pc-meta" style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;"></div>
             <div class="pc-tiers" id="pc-tiers"></div>
-            <div class="hero-icon-wrap" id="pc-heroes"></div>
           </div>
         </div>
         <table class="pc-table" id="pc-table"></table>
@@ -533,21 +535,26 @@
     document.getElementById('grade-banner').className = `grade-banner grade-${grade==='고'?'고':'저'}`;
     const gb = document.getElementById('pc-grade-badge');
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
-    gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
+    gb.textContent = grade==='고'?'🔴 고티어':'🔵 저티어';
 
     const photoEl = document.getElementById('pc-photo');
     if (p.photo) { photoEl.innerHTML = `<img src="${p.photo}" />`; }
     else { photoEl.innerHTML = '👤'; }
 
-    document.getElementById('pc-name').textContent = p.name;
+    // 이름 + 포지션 한 줄에
+    const roleColor = p.grade === '고' ? '#ef4444' : '#3b82f6';
+    const roleBg    = p.grade === '고' ? 'rgba(239,68,68,.15)' : 'rgba(59,130,246,.15)';
+    document.getElementById('pc-name').innerHTML = `
+      <span>${p.name}</span>
+      ${p.role ? `<span style="font-family:'Pretendard',sans-serif;font-size:1rem;font-weight:700;
+        padding:4px 12px;border-radius:7px;margin-left:10px;vertical-align:middle;
+        background:${roleBg};color:${roleColor};border:1px solid ${roleColor};">${p.role}</span>` : ''}
+    `;
 
-    // 포지션 + 스타일 인라인으로 이름 아래에
-    const metaHtml = [
-      p.role  ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 9px;font-size:.75rem;margin-right:5px;">${p.role}</span>` : '',
-      p.style ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '',
-    ].join('');
+    // 스타일만 아래에
     const metaEl = document.getElementById('pc-meta');
-    if (metaEl) metaEl.innerHTML = metaHtml;
+    if (metaEl) metaEl.innerHTML = p.style
+      ? `<span style="color:var(--muted);font-size:.78rem;">${p.style}</span>` : '';
 
     document.getElementById('pc-tiers').innerHTML = `
       <div class="tier-item"><div class="tier-label">현재 티어</div><div class="tier-val">${p.curTier||'-'}</div></div>
