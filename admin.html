@@ -556,13 +556,16 @@
     const { ref, get } = window._dbFns;
     const snap = await get(ref(window._db, `rooms/${ROOM}/meta/roomPw`));
     const pw   = snap.exists() ? snap.val() : '';
+    // 평문은 roomPwPlain에서 읽기 (해시는 roomPw)
+    const plainSnap = await get(ref(window._db, `rooms/${ROOM}/meta/roomPwPlain`));
+    const plain = plainSnap.exists() ? plainSnap.val() : '';
     const el = document.getElementById('room-pw-current');
-    if (el) el.innerHTML = pw
+    if (el) el.innerHTML = plain
       ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
            <span style="font-size:.72rem;color:var(--muted);">현재 비밀번호</span>
            <span style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--accent);
              background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);
-             border-radius:6px;padding:4px 14px;letter-spacing:2px;">${pw}</span>
+             border-radius:6px;padding:4px 14px;letter-spacing:2px;">${plain}</span>
            <span style="font-size:.72rem;color:var(--success);">✅ 설정됨</span>
          </div>`
       : `<div style="font-size:.78rem;color:var(--muted);">🔓 비밀번호 없음 — 누구나 링크로 입장 가능</div>`;
@@ -570,11 +573,18 @@
     if (input) input.value = pw || '';
   }
 
+  // SHA-256 해시 (비밀번호 원문 저장 방지)
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
   async function changeRoomPw() {
     const { ref, update } = window._dbFns;
     const pw = document.getElementById('room-pw-input').value.trim();
-    await update(ref(window._db, `rooms/${ROOM}/meta`), { roomPw: pw });
-    showToast(pw ? `✅ 방 비밀번호 설정: "${pw}"` : '✅ 방 비밀번호 해제됨');
+    const hashVal = pw ? await sha256(pw) : '';
+    await update(ref(window._db, `rooms/${ROOM}/meta`), { roomPw: hashVal, roomPwPlain: pw });
+    showToast(pw ? `✅ 방 비밀번호 설정 완료` : '✅ 방 비밀번호 해제됨');
     loadRoomPw();
   }
 

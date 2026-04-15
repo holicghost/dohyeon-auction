@@ -72,17 +72,17 @@
       border:2px solid var(--border);flex-shrink:0;overflow:hidden;
       display:flex;align-items:center;justify-content:center;font-size:3rem;}
     .pc-info{flex:1;min-width:0;}
-    .pc-role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;}
+    /* 등급/포지션 배지 - 완전히 동일한 높이/크기 */
+    .pc-grade-badge, .pc-role-badge{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:4px 11px;border-radius:5px;font-size:.75rem;font-weight:700;
+      line-height:1;height:24px;box-sizing:border-box;}
+    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
+    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .rb-딜러{background:rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316;}
     .rb-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .rb-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
     .rb-유동{background:rgba(168,85,247,.2);color:#a855f7;border:1px solid #a855f7;}
-    .pc-grade-badge{
-      display:inline-flex;align-items:center;gap:4px;
-      padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;
-    }
-    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
-    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .
     .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.3rem;line-height:1.1;margin-bottom:7px;}
     .pc-tiers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;}
@@ -260,8 +260,8 @@
 <!-- 시작 전 (레이아웃 밖) -->
 <div id="init-wrap" class="card" style="margin-bottom:14px;">
   <div id="init-screen">
-    <h3 style="margin-bottom:8px;">경매 준비 완료</h3>
-    <p id="lottery-status-msg" style="margin-bottom:20px;color:var(--muted);">시작 버튼을 누르면 팀장 순서를 추첨합니다</p>
+    <h3 style="margin-bottom:8px;font-size:1.6rem;">경매 준비 완료</h3>
+    <p id="lottery-status-msg" style="margin-bottom:20px;color:var(--muted);font-size:1rem;">시작 버튼을 누르면 팀장 순서를 추첨합니다</p>
 
     <!-- 추첨 결과 슬롯 -->
     <div id="lottery-slots" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:90px;align-items:center;">
@@ -901,15 +901,28 @@
 
   // ── 다음 선수
   async function nextPlayer(extra={}) {
-    const { ref, update } = window._dbFns;
-    const { auction, players } = roomData;
-    const rem = auction.order.filter(pid => pid!==auction.currentPlayer && players[pid]?.assignedTo==null);
-    const upd = {...extra};
+    const { ref, update, get } = window._dbFns;
+
+    // extra 먼저 커밋 (낙찰 처리: assignedTo, members 포함)
+    if (Object.keys(extra).length > 0) {
+      await update(ref(window._db), extra);
+    }
+
+    // Firebase에서 최신 상태 다시 읽어서 rem 계산 (낙찰 반영 보장)
+    const freshSnap = await get(ref(window._db, `rooms/${ROOM}`));
+    const fresh = freshSnap.val();
+    const { auction, players } = fresh;
+
+    const curPid = auction.currentPlayer;
+    const rem = auction.order.filter(pid =>
+      pid !== curPid && players[pid]?.assignedTo == null
+    );
 
     if (rem.length === 0) {
-      upd[`rooms/${ROOM}/auction/status`] = 'finished';
-      upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
-      await update(ref(window._db), upd);
+      await update(ref(window._db), {
+        [`rooms/${ROOM}/auction/status`]: 'finished',
+        [`rooms/${ROOM}/auction/currentPlayer`]: null,
+      });
       return;
     }
 
@@ -917,8 +930,6 @@
     const nextP    = players[nextPid];
     const nextKey  = `${nextP?.grade||'고'}_${nextP?.role||''}`;
 
-    // 현재 선수의 그룹 키
-    const curPid = auction.currentPlayer;
     const curP   = curPid ? players[curPid] : null;
     const curKey = curP ? `${curP.grade||'고'}_${curP.role||''}` : null;
 
@@ -926,30 +937,26 @@
     if (curKey && curKey !== nextKey) {
       const curLabel  = `${curP.grade==='고'?'고티어':'저티어'} ${curP.role}`;
       const nextLabel = `${nextP?.grade==='고'?'고티어':'저티어'} ${nextP?.role||''}`;
-      // Firebase에 먼저 extra 업데이트 (낙찰 처리 등)
-      if (Object.keys(extra).length > 0) {
-        await update(ref(window._db), extra);
-      }
-      // 브레이크 화면 표시 후 다음 그룹 시작
       showBreak(curLabel, nextLabel, async () => {
-        const upd2 = {};
-        upd2[`rooms/${ROOM}/auction/status`]        = 'preview';
-        upd2[`rooms/${ROOM}/auction/currentPlayer`] = nextPid;
-        upd2[`rooms/${ROOM}/auction/currentBid`]    = 0;
-        upd2[`rooms/${ROOM}/auction/currentLeader`] = null;
-        upd2[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
-        await update(ref(window._db), upd2);
+        await update(ref(window._db), {
+          [`rooms/${ROOM}/auction/status`]:        'preview',
+          [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,
+          [`rooms/${ROOM}/auction/currentBid`]:    0,
+          [`rooms/${ROOM}/auction/currentLeader`]: null,
+          [`rooms/${ROOM}/auction/timerEndsAt`]:   Date.now() + PREVIEW_SEC * 1000,
+        });
       });
       return;
     }
 
     // 같은 그룹이면 바로 다음 선수로
-    upd[`rooms/${ROOM}/auction/status`]        = 'preview';
-    upd[`rooms/${ROOM}/auction/currentPlayer`] = nextPid;
-    upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
-    upd[`rooms/${ROOM}/auction/currentLeader`] = null;
-    upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
-    await update(ref(window._db), upd);
+    await update(ref(window._db), {
+      [`rooms/${ROOM}/auction/status`]:        'preview',
+      [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,
+      [`rooms/${ROOM}/auction/currentBid`]:    0,
+      [`rooms/${ROOM}/auction/currentLeader`]: null,
+      [`rooms/${ROOM}/auction/timerEndsAt`]:   Date.now() + PREVIEW_SEC * 1000,
+    });
   }
 
   // ── 포지션 전환 브레이크 화면
@@ -1139,12 +1146,12 @@
         : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:3px;"></span>`;
       const onlineTxt = isOnline ? '접속 완료' : '미접속';
       const onlineClr = isOnline ? '#22c55e' : '#ef4444';
-      return `<div id="ls-${tk}" style="display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .3s;">
-        <div style="width:54px;height:54px;border-radius:8px;overflow:hidden;background:var(--surface2);
-          border:2px solid ${isOnline?'#22c55e':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${photo}</div>
-        <div style="font-size:.75rem;font-weight:700;">${t.name}</div>
-        <div style="font-size:.65rem;color:${onlineClr};display:flex;align-items:center;">${onlineDot}${onlineTxt}</div>
-        <div id="ls-order-${tk}" style="font-size:.7rem;color:var(--muted);">?</div>
+      return `<div id="ls-${tk}" style="display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .3s;">
+        <div style="width:90px;height:90px;border-radius:12px;overflow:hidden;background:var(--surface2);
+          border:3px solid ${isOnline?'#22c55e':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:2rem;">${photo}</div>
+        <div style="font-size:1rem;font-weight:700;">${t.name}</div>
+        <div style="font-size:.82rem;color:${onlineClr};display:flex;align-items:center;font-weight:600;">${onlineDot}${onlineTxt}</div>
+        <div id="ls-order-${tk}" style="font-size:.88rem;color:var(--muted);font-weight:600;">?</div>
       </div>`;
     }).join('');
 
@@ -1224,7 +1231,8 @@
               if (el) {
                 el.textContent    = `${i+1}순위`;
                 el.style.color    = i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : 'var(--text)';
-                el.style.fontWeight = i === 0 ? '900' : '600';
+                el.style.fontWeight = i === 0 ? '900' : '700';
+                el.style.fontSize = i === 0 ? '1rem' : '.9rem';
               }
               if (card) {
                 card.style.transition  = 'transform .3s, box-shadow .3s';

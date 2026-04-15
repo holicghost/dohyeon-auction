@@ -65,15 +65,17 @@
       justify-content:center;font-size:3rem;overflow:hidden;}
     .pc-photo img{width:100%;height:100%;object-fit:cover;}
     .pc-info{flex:1;min-width:0;}
-    .pc-role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:.72rem;font-weight:700;}
+    /* 등급/포지션 배지 - 완전히 동일한 높이/크기 */
+    .pc-grade-badge, .pc-role-badge{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:4px 11px;border-radius:5px;font-size:.75rem;font-weight:700;
+      line-height:1;height:24px;box-sizing:border-box;}
+    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
+    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .rb-딜러{background:rgba(249,115,22,.2);color:#f97316;border:1px solid #f97316;}
     .rb-탱커{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .rb-힐러{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e;}
     .rb-유동{background:rgba(168,85,247,.2);color:#a855f7;border:1px solid #a855f7;}
-    .pc-grade-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
-      border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:5px;}
-    .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
-    .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
     .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.3rem;line-height:1.1;margin-bottom:7px;}
     .pc-tiers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;}
     .tier-item{display:flex;flex-direction:column;gap:2px;}
@@ -462,7 +464,9 @@
       ]);
       const meta  = metaSnap.exists()  ? metaSnap.val()  : {};
       const teams = teamsSnap.exists() ? teamsSnap.val() : {};
-      const pw    = meta.roomPw || '';
+      const hasPw = !!(meta.roomPw || '').trim();
+      // 해시는 검증 시점에만 계산, 평문은 저장/전달하지 않음
+      const pwHash = hasPw ? await sha256(meta.roomPw) : '';
 
       // 세션에 이미 인증됐으면 스킵
       const sessionKey = `roomAuth_${ROOM}`;
@@ -474,11 +478,10 @@
       // 팀장 링크면 → 본인 확인 모달 먼저
       if (IS_LEADER) {
         const teamName = teams[TEAM_KEY]?.name || TEAM_KEY;
-        showLeaderConfirmModal(meta.title || '경매', teamName, pw, teams);
+        showLeaderConfirmModal(meta.title || '경매', teamName, hasPw, pwHash);
       } else {
-        // 관전자/일반
-        if (pw) {
-          showPwModal(pw);
+        if (hasPw) {
+          showPwModal(pwHash);
         } else {
           startListening();
         }
@@ -488,7 +491,7 @@
     }
   }
 
-  function showLeaderConfirmModal(roomTitle, leaderName, correctPw, teams) {
+  function showLeaderConfirmModal(roomTitle, leaderName, hasPw, pwHash) {
     const overlay = document.createElement('div');
     overlay.id = 'confirm-modal';
     overlay.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(10,14,26,.97);
@@ -521,37 +524,49 @@
           border:none;border-radius:12px;color:#fff;font-weight:700;font-family:inherit;
           font-size:1rem;cursor:pointer;margin-bottom:10px;"
           onclick="(function(){
-            const hasPw = '${correctPw}' !== '';
+            const _hasPw  = window._confirmHasPw;
+            const _pwHash = window._confirmPwHash;
             const pwSection = document.getElementById('confirm-pw-section');
-            if (hasPw && pwSection.style.display === 'none') {
+            if (_hasPw && pwSection.style.display === 'none') {
               pwSection.style.display = '';
               document.getElementById('confirm-pw-input').focus();
               document.getElementById('confirm-ok-btn').textContent = '입장하기';
               return;
             }
-            if (hasPw) {
+            if (_hasPw) {
               const val = document.getElementById('confirm-pw-input').value;
-              if (val !== '${correctPw}') {
-                document.getElementById('confirm-pw-err').textContent = '비밀번호가 틀렸습니다';
-                document.getElementById('confirm-pw-input').value = '';
-                document.getElementById('confirm-pw-input').focus();
-                setTimeout(()=>{ document.getElementById('confirm-pw-err').textContent=''; },2000);
-                return;
-              }
+              crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)).then(buf => {
+                const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+                if (hash !== _pwHash) {
+                  document.getElementById('confirm-pw-err').textContent = '비밀번호가 틀렸습니다';
+                  document.getElementById('confirm-pw-input').value = '';
+                  document.getElementById('confirm-pw-input').focus();
+                  setTimeout(()=>{ document.getElementById('confirm-pw-err').textContent=''; },2000);
+                } else {
+                  sessionStorage.setItem('roomAuth_' + window._confirmRoom, window._confirmRoom + '_ok');
+                  document.getElementById('confirm-modal').remove();
+                  markLeaderOnline();
+                  startListening();
+                }
+              });
+              return;
             }
-            sessionStorage.setItem('roomAuth_${ROOM}', '${ROOM}_ok');
+            sessionStorage.setItem('roomAuth_' + window._confirmRoom, window._confirmRoom + '_ok');
             document.getElementById('confirm-modal').remove();
             markLeaderOnline();
             startListening();
-          })()">맞습니다${correctPw ? ' →' : ' · 입장하기'}</button>
+          })()">맞습니다</button>
         <button onclick="location.href='index.html'"
           style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;font-family:inherit;">
           ← 돌아가기
         </button>
       </div>`;
     document.body.appendChild(overlay);
-    // 비번 없으면 pw section 숨김, 버튼 텍스트 조정
-    if (!correctPw) {
+    // 비밀번호 정보를 window에 저장 (인라인 onclick에서 접근용, 평문 아님)
+    window._confirmHasPw  = hasPw;
+    window._confirmPwHash = pwHash;
+    window._confirmRoom   = ROOM;
+    if (!hasPw) {
       overlay.querySelector('#confirm-ok-btn').textContent = '맞습니다 · 입장하기';
     }
   }
@@ -566,7 +581,7 @@
     });
   }
 
-  function showPwModal(correctPw) {
+  function showPwModal(pwHash) {
     const overlay = document.createElement('div');
     overlay.id = 'pw-modal';
     overlay.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(10,14,26,.95);
@@ -589,17 +604,20 @@
           font-size:1rem;cursor:pointer;margin-bottom:10px;"
           onclick="(function(){
             const val = document.getElementById('room-pw-input').value;
-            if(val === '${correctPw}') {
-              sessionStorage.setItem('roomAuth_${ROOM}', '${correctPw}');
-              document.getElementById('pw-modal').remove();
-              startListening();
-            } else {
-              const err = document.getElementById('room-pw-err');
-              err.textContent = '비밀번호가 틀렸습니다';
-              document.getElementById('room-pw-input').value = '';
-              document.getElementById('room-pw-input').focus();
-              setTimeout(()=>{err.textContent='';},2000);
-            }
+            crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)).then(buf => {
+              const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+              if(hash === window._roomPwHash) {
+                sessionStorage.setItem('roomAuth_' + window._roomPwRoom, window._roomPwRoom + '_ok');
+                document.getElementById('pw-modal').remove();
+                startListening();
+              } else {
+                const err = document.getElementById('room-pw-err');
+                err.textContent = '비밀번호가 틀렸습니다';
+                document.getElementById('room-pw-input').value = '';
+                document.getElementById('room-pw-input').focus();
+                setTimeout(()=>{err.textContent='';},2000);
+              }
+            });
           })()">입장하기</button>
         <button onclick="location.href='index.html'"
           style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;font-family:inherit;">
@@ -607,6 +625,8 @@
         </button>
       </div>`;
     document.body.appendChild(overlay);
+    window._roomPwHash = pwHash;
+    window._roomPwRoom = ROOM;
     setTimeout(() => document.getElementById('room-pw-input')?.focus(), 100);
   }
 
