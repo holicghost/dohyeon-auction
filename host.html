@@ -539,6 +539,7 @@
   const BREAK_SEC   = 10; // 포지션 그룹 전환 대기 시간
 
   let roomData = null, timerInterval = null, transLock = false;
+  let _lastCurrentPlayer = null; // currentPlayer 변경 감지용
   let breakInterval = null, breakRemaining = 0, breakPaused = false;
   let prevGroupKey = null; // 이전 선수의 그룹 키 (grade_role) 추적
 
@@ -660,9 +661,16 @@
     }
 
     if (!auction.paused) {
-      // 타이머 재시작 시 transLock 초기화 (새 선수로 넘어온 경우)
-      transLock = false;
-      startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+      // 현재 선수가 바뀐 경우에만 transLock 초기화 + 타이머 재시작
+      const curPlayer = auction.currentPlayer;
+      if (curPlayer !== _lastCurrentPlayer) {
+        _lastCurrentPlayer = curPlayer;
+        transLock = false;
+        startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+      } else if (!timerInterval) {
+        // 타이머가 없으면 (재개 등) 다시 시작, transLock은 유지
+        startLocalTimer(auction.timerEndsAt, isPreview ? PREVIEW_SEC : BID_SEC, isPreview);
+      }
     }
 
     // NEXT 선수
@@ -943,23 +951,7 @@
     const curP   = curPid ? players[curPid] : null;
     const curKey = curP ? `${curP.grade||'고'}_${curP.role||''}` : null;
 
-    // 그룹이 바뀌면 브레이크 화면
-    if (curKey && curKey !== nextKey) {
-      const curLabel  = `${curP.grade==='고'?'고티어':'저티어'} ${curP.role}`;
-      const nextLabel = `${nextP?.grade==='고'?'고티어':'저티어'} ${nextP?.role||''}`;
-      showBreak(curLabel, nextLabel, async () => {
-        await update(ref(window._db), {
-          [`rooms/${ROOM}/auction/status`]:        'preview',
-          [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,
-          [`rooms/${ROOM}/auction/currentBid`]:    0,
-          [`rooms/${ROOM}/auction/currentLeader`]: null,
-          [`rooms/${ROOM}/auction/timerEndsAt`]:   Date.now() + PREVIEW_SEC * 1000,
-        });
-      });
-      return;
-    }
-
-    // 같은 그룹이면 바로 다음 선수로
+    // 바로 다음 선수로 (그룹 브레이크 제거)
     await update(ref(window._db), {
       [`rooms/${ROOM}/auction/status`]:        'preview',
       [`rooms/${ROOM}/auction/currentPlayer`]: nextPid,
