@@ -65,7 +65,6 @@
     }
     .grade-고{background:linear-gradient(90deg,#ef4444,#f97316);}
     .grade-저{background:linear-gradient(90deg,#3b82f6,#6366f1);}
-    .
 
     .pc-top{display:flex;gap:16px;align-items:flex-start;margin-top:8px;}
     .pc-photo{width:80px;height:80px;border-radius:10px;object-fit:cover;
@@ -79,7 +78,6 @@
     }
     .gb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
     .gb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
-    .
     .pc-name{font-family:'Black Han Sans',sans-serif;font-size:2.2rem;line-height:1.1;margin-bottom:8px;}
     .pc-tiers{display:flex;gap:12px;margin-bottom:8px;}
     .tier-item{display:flex;flex-direction:column;gap:2px;}
@@ -335,6 +333,17 @@
         </div>
       </div>
 
+      <!-- 카테고리 전환 화면 -->
+      <div id="category-break-screen" style="display:none;text-align:center;padding:40px 0;">
+        <div id="cb-emoji" style="font-size:3rem;margin-bottom:14px;">✅</div>
+        <h3 id="cb-title" style="font-size:1.5rem;margin-bottom:10px;font-family:'Black Han Sans',sans-serif;">고티어 경매 완료!</h3>
+        <p id="cb-subtitle" style="color:var(--muted);margin-bottom:8px;font-size:.9rem;">고티어 선수 경매가 모두 끝났습니다</p>
+        <p id="cb-next" style="color:var(--accent2);margin-bottom:28px;font-size:.85rem;">다음: 저티어 경매</p>
+        <button class="btn btn-primary" onclick="resumeNextCategory()" style="font-size:1rem;padding:12px 32px;">
+          ▶ 이어서 진행하기
+        </button>
+      </div>
+
       <!-- 완료 -->
       <div id="finished-screen" style="display:none;text-align:center;padding:32px 0;">
         <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
@@ -419,8 +428,30 @@
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
     if (!k) return '';
-    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
+    // CDN 슬러그 재정의 (점·특수문자 제거 등)
+    const SLUG_FIX = {
+      'd.va':         'dva',
+      'wrecking-ball':'wrecking-ball',
+    };
+    const slug = SLUG_FIX[k] || k;
+    if (OW2_NEW.has(k)) {
+      return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${slug}.png`;
+    }
+    // OW1 영웅이지만 점이 있는 슬러그(d.va)는 URL에 그대로 써도 됨
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
+  // 이미지 로드 실패 시 대체 CDN 시도
+  function heroImgHtml(name, cls='') {
+    const primary = heroImgUrl(name);
+    if (!primary) return '<span style="font-size:1.1rem">🎮</span>';
+    // 미스포춘, 주노 등 누락 가능 영웅은 두 CDN 모두 시도
+    const k = OW_HEROES[name] || '';
+    const fallback = OW2_NEW.has(k)
+      ? \`https://blzgdapipro-a.akamaihd.net/hero/\${k}/icon-portrait.png\`
+      : \`https://d15f34w2p8l1cc.cloudfront.net/overwatch/\${(k||'').replace('.','')}.png\`;
+    return \`<img src="\${primary}" class="\${cls}"
+      style="width:100%;height:100%;object-fit:cover;"
+      onerror="this.src='\${fallback}';this.onerror=function(){this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'}" />\`;
   }
   function renderHeroes(heroes) {
     return heroes.filter(Boolean).map(h => {
@@ -472,10 +503,12 @@
     const st = roomData.auction.status;
     document.getElementById('init-wrap').style.display        = st==='waiting' ? '' : 'none';
     document.getElementById('main-layout').style.display      = st==='waiting' ? 'none' : 'grid';
-    document.getElementById('auction-screen').style.display   = (st==='preview'||st==='bidding') ? '' : 'none';
-    document.getElementById('finished-screen').style.display  = st==='finished' ? '' : 'none';
+    document.getElementById('auction-screen').style.display          = (st==='preview'||st==='bidding') ? '' : 'none';
+    document.getElementById('category-break-screen').style.display   = st==='category-break' ? '' : 'none';
+    document.getElementById('finished-screen').style.display         = st==='finished' ? '' : 'none';
     if (st==='waiting') renderLotterySlots();
     if (st==='preview'||st==='bidding') renderAuction();
+    if (st==='category-break') renderCategoryBreak();
     if (st==='finished') stopTimer();
     renderTeams(); renderQueue(); renderLinks(); renderLog();
   }
@@ -664,18 +697,25 @@
 
   // ── 낙찰
   async function hammered() {
+    if (transLock) return;
     const { ref, update } = window._dbFns;
     const { auction, teams } = roomData;
+    if (!auction || !teams) return;
+    if (auction.status !== 'bidding') { showToast('입찰 중이 아닙니다'); return; }
     if (!auction.currentLeader) { showToast('입찰자가 없습니다'); return; }
-    const tk  = auction.currentLeader, pid = auction.currentPlayer, bid = auction.currentBid;
+    transLock = true;
+    const tk  = auction.currentLeader, pid = auction.currentPlayer, bid = auction.currentBid || 0;
+    if (!teams[tk]) { showToast('팀 정보를 찾을 수 없습니다'); transLock = false; return; }
+    if (!pid) { showToast('선수 정보를 찾을 수 없습니다'); transLock = false; return; }
     const upd = {};
     upd[`rooms/${ROOM}/teams/${tk}/members`]       = [...(teams[tk].members||[]), pid];
-    upd[`rooms/${ROOM}/teams/${tk}/points`]        = teams[tk].points - bid;
+    upd[`rooms/${ROOM}/teams/${tk}/points`]        = (teams[tk].points || 0) - bid;
     upd[`rooms/${ROOM}/players/${pid}/assignedTo`] = tk;
     const log = [...(auction.log||[]), { pid, teamKey: tk, price: bid, ts: Date.now() }];
     upd[`rooms/${ROOM}/auction/log`] = log;
     await nextPlayer(upd);
     showToast(`🔨 ${getTeamName(tk)} 낙찰! (-${bid}pt)`);
+    transLock = false;
   }
 
   // ── 유찰
@@ -728,20 +768,67 @@
   // ── 다음 선수
   async function nextPlayer(extra={}) {
     const { ref, update } = window._dbFns;
-    const { auction } = roomData;
-    const rem = auction.order.filter(pid => pid!==auction.currentPlayer && roomData.players[pid]?.assignedTo==null);
+    const { auction, players } = roomData;
+    const rem = auction.order.filter(pid => pid!==auction.currentPlayer && players[pid]?.assignedTo==null);
     const upd = {...extra};
+
     if (rem.length === 0) {
       upd[`rooms/${ROOM}/auction/status`] = 'finished';
       upd[`rooms/${ROOM}/auction/currentPlayer`] = null;
     } else {
-      upd[`rooms/${ROOM}/auction/status`]        = 'preview';
-      upd[`rooms/${ROOM}/auction/currentPlayer`] = rem[0];
-      upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
-      upd[`rooms/${ROOM}/auction/currentLeader`] = null;
-      upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
+      // 카테고리 전환 감지: 현재 선수 등급 vs 다음 선수 등급
+      const curGrade  = players[auction.currentPlayer]?.grade || '고';
+      const nextGrade = players[rem[0]]?.grade || '고';
+      const gradeOrder = ['고', '중', '저'];
+      const curIdx  = gradeOrder.indexOf(curGrade);
+      const nextIdx = gradeOrder.indexOf(nextGrade);
+
+      if (nextIdx > curIdx) {
+        // 카테고리가 내려감 → 휴식 화면
+        upd[`rooms/${ROOM}/auction/status`]          = 'category-break';
+        upd[`rooms/${ROOM}/auction/breakFromGrade`]  = curGrade;
+        upd[`rooms/${ROOM}/auction/breakToGrade`]    = nextGrade;
+        upd[`rooms/${ROOM}/auction/nextCategoryPid`] = rem[0];
+        upd[`rooms/${ROOM}/auction/currentPlayer`]   = null;
+      } else {
+        upd[`rooms/${ROOM}/auction/status`]        = 'preview';
+        upd[`rooms/${ROOM}/auction/currentPlayer`] = rem[0];
+        upd[`rooms/${ROOM}/auction/currentBid`]    = 0;
+        upd[`rooms/${ROOM}/auction/currentLeader`] = null;
+        upd[`rooms/${ROOM}/auction/timerEndsAt`]   = Date.now() + PREVIEW_SEC * 1000;
+      }
     }
     await update(ref(window._db), upd);
+  }
+
+  // ── 카테고리 전환 화면 렌더
+  function renderCategoryBreak() {
+    stopTimer();
+    const { auction } = roomData;
+    const from = auction.breakFromGrade || '고';
+    const to   = auction.breakToGrade   || '저';
+    const gradeLabel = { '고': '고티어', '중': '중티어', '저': '저티어' };
+    document.getElementById('cb-title').textContent    = `${gradeLabel[from]} 경매가 끝났습니다`;
+    document.getElementById('cb-subtitle').textContent = `${gradeLabel[from]} 선수 경매가 모두 끝났습니다`;
+    document.getElementById('cb-next').textContent     = `다음: ${gradeLabel[to]} 경매`;
+  }
+
+  // ── 다음 카테고리 이어서 진행
+  async function resumeNextCategory() {
+    const { ref, update } = window._dbFns;
+    const { auction } = roomData;
+    const nextPid = auction.nextCategoryPid;
+    if (!nextPid) { showToast('다음 선수를 찾을 수 없습니다'); return; }
+    await update(ref(window._db, `rooms/${ROOM}/auction`), {
+      status: 'preview',
+      currentPlayer: nextPid,
+      currentBid: 0,
+      currentLeader: null,
+      timerEndsAt: Date.now() + PREVIEW_SEC * 1000,
+      breakFromGrade: null,
+      breakToGrade: null,
+      nextCategoryPid: null,
+    });
   }
 
   const TEAM_COLORS = [

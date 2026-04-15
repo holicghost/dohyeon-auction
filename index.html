@@ -18,7 +18,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     // ✅ Firebase 설정 붙여넣기
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
@@ -33,7 +33,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
     window._db = db;
-    window._dbFns = { ref, set, get };
+    window._dbFns = { ref, set, get, update };
     window._remove = remove;
   </script>
   <style>
@@ -152,8 +152,15 @@
     <button class="btn btn-primary" onclick="showSection('create')" style="font-size:1rem;padding:16px;">
       🏆 새로운 방 생성하기
     </button>
+    <button class="btn btn-sec" id="myrooms-main-btn" onclick="showSection('myrooms')" style="font-size:1rem;padding:16px;border-color:var(--accent2);color:var(--accent2);display:none;">
+      📋 내가 만든 방 수정하기
+    </button>
     <button class="btn btn-sec" onclick="showSection('join')" style="font-size:1rem;padding:16px;">
       🔗 기존 방 입장하기
+    </button>
+    <button class="btn btn-sec" onclick="showSection('users')" id="users-main-btn"
+      style="font-size:1rem;padding:16px;border-color:#22c55e;color:#22c55e;display:none;">
+      👥 이용자 관리
     </button>
     <button class="btn btn-sec" onclick="showSection('admin')" id="admin-main-btn"
       style="font-size:1rem;padding:16px;border-color:var(--accent);color:var(--accent);">
@@ -223,6 +230,53 @@
   </div>
 </div>
 
+<!-- 이용자 관리 -->
+<div id="section-users" style="display:none;width:100%;max-width:580px;">
+  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="font-size:1.1rem;margin:0;">👥 이용자 관리</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input id="user-search" type="text" placeholder="이름 / 아이디 검색"
+          oninput="filterUsers()"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+            color:var(--text);padding:7px 12px;font-size:.82rem;font-family:inherit;outline:none;width:160px;" />
+        <button onclick="loadUsersList()" style="background:none;border:1px solid var(--border);
+          border-radius:6px;color:var(--muted);padding:6px 12px;font-size:.76rem;cursor:pointer;font-family:inherit;">
+          🔄
+        </button>
+      </div>
+    </div>
+    <!-- 요약 통계 -->
+    <div id="users-stats" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
+    <!-- 이용자 목록 -->
+    <div id="users-list-main" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 내 방 수정 -->
+<div id="section-myrooms" style="display:none;width:100%;max-width:580px;">
+  <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
+  <div class="card">
+    <h2 style="margin-bottom:16px;">📋 내가 만든 방 수정하기</h2>
+    <div class="fg" style="margin-bottom:6px;">
+      <label>방 선택</label>
+      <select id="myroom-select" style="width:100%;background:var(--surface2);border:1px solid var(--border);
+        border-radius:8px;color:var(--text);padding:11px 14px;font-size:.95rem;font-family:inherit;outline:none;">
+        <option value="">-- 방을 선택하세요 --</option>
+      </select>
+    </div>
+    <div id="myroom-info" style="display:none;background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;padding:12px 14px;font-size:.8rem;color:var(--muted);margin-bottom:10px;">
+    </div>
+    <button class="btn btn-primary" onclick="loadMyRoom()" style="margin-bottom:0;">
+      ✏️ 선택한 방 수정하기
+    </button>
+  </div>
+</div>
+
 <!-- 기존 방 참여 -->
 <div id="section-join" style="display:none;width:100%;max-width:580px;">
   <button onclick="showSection(null)" class="btn btn-ghost" style="margin-bottom:10px;font-size:.82rem;">← 돌아가기</button>
@@ -285,59 +339,102 @@
   ];
   const STYLES = ['공격적 진입','안정적 서포트','한타 집중','포킹/라인전','유틸리티','플렉스 올라운더'];
 
-  const OW_HEROES = {
-    // 탱커
-    '디바':        'd.va',
-    '라마트라':    'ramattra',
-    '라인하르트':  'reinhardt',
-    '로드호그':    'roadhog',
-    '마우가':      'mauga',
-    '시그마':      'sigma',
-    '오리사':      'orisa',
-    '윈스턴':      'winston',
-    '자리야':      'zarya',
-    '정커퀸':      'junker-queen',
-    '해머':        'wrecking-ball',
-    // 딜러
-    '겐지':        'genji',
-    '맥크리':      'cassidy',
-    '미스포춘':    'misfortune',
-    '바스티온':    'bastion',
-    '솔저76':      'soldier-76',
-    '소전':        'sojourn',
-    '시메트라':    'symmetra',
-    '에코':        'echo',
-    '위도우메이커': 'widowmaker',
-    '정크랫':      'junkrat',
-    '파라':        'pharah',
-    '한조':        'hanzo',
-    '애쉬':        'ashe',
-    '리퍼':        'reaper',
-    '트레이서':    'tracer',
-    '벤처':        'venture',
-    '하자드':      'hazard',
-    '솜브라':      'sombra',
-    // 힐러
-    '아나':        'ana',
-    '루시우':      'lucio',
-    '메르시':      'mercy',
-    '모이라':      'moira',
-    '바티스트':    'baptiste',
-    '브리기테':    'brigitte',
-    '일라리':      'illari',
-    '젠야타':      'zenyatta',
-    '키리코':      'kiriko',
-    '라이프위버':  'lifeweaver',
-    '주노':        'juno',
+  // 역할별 영웅 데이터 (딜러만 선택 가능, 힐러/탱커는 optgroup으로 비활성)
+  const OW_HEROES_BY_ROLE = {
+    '딜러': {
+      '겐지':        'genji',
+      '맥크리':      'cassidy',
+      '미스포춘':    'misfortune',
+      '바스티온':    'bastion',
+      '벤처':        'venture',
+      '솔저76':      'soldier-76',
+      '솜브라':      'sombra',
+      '소전':        'sojourn',
+      '시메트라':    'symmetra',
+      '애쉬':        'ashe',
+      '에코':        'echo',
+      '위도우메이커':'widowmaker',
+      '정크랫':      'junkrat',
+      '파라':        'pharah',
+      '하자드':      'hazard',
+      '한조':        'hanzo',
+      '리퍼':        'reaper',
+      '트레이서':    'tracer',
+    },
+    '힐러': {
+      '루시우':      'lucio',
+      '메르시':      'mercy',
+      '모이라':      'moira',
+      '바티스트':    'baptiste',
+      '브리기테':    'brigitte',
+      '아나':        'ana',
+      '일라리':      'illari',
+      '젠야타':      'zenyatta',
+      '주노':        'juno',
+      '키리코':      'kiriko',
+      '라이프위버':  'lifeweaver',
+    },
+    '탱커': {
+      '디바':        'd.va',
+      '라마트라':    'ramattra',
+      '라인하르트':  'reinhardt',
+      '로드호그':    'roadhog',
+      '마우가':      'mauga',
+      '시그마':      'sigma',
+      '오리사':      'orisa',
+      '윈스턴':      'winston',
+      '자리야':      'zarya',
+      '정커퀸':      'junker-queen',
+      '해머':        'wrecking-ball',
+    },
   };
+  // 역할별 구분 없이 전체 맵 (이미지 URL 조회용)
+  const OW_HEROES = Object.assign({}, ...Object.values(OW_HEROES_BY_ROLE));
   // OW1 구 영웅: blzgdapipro CDN, OW2 신규 영웅: d15f34w2p8l1cc CDN
-  const OW2_NEW = new Set(['ramattra','kiriko','lifeweaver','juno','sojourn','junker-queen','mauga','venture','illari','hazard']);
+  const OW2_NEW = new Set(['ramattra','kiriko','lifeweaver','juno','sojourn','junker-queen','mauga','venture','illari','hazard','diva','dva']);
   const HERO_NAMES = Object.keys(OW_HEROES).sort((a,b) => a.localeCompare(b, 'ko'));
+  // 영웅 선택 <select> HTML 생성 (딜러=선택가능, 힐러/탱커=비활성 optgroup)
+  function buildHeroSelectOptions() {
+    const parts = ['<option value="">-- 영웅 선택 --</option>'];
+    const roleLabel = { '딜러':'⚔️ 딜러', '힐러':'💚 힐러 (선택 불가)', '탱커':'🛡️ 탱커 (선택 불가)' };
+    for (const [role, heroes] of Object.entries(OW_HEROES_BY_ROLE)) {
+      const disabled = role !== '딜러';
+      const sorted = Object.keys(heroes).sort((a,b) => a.localeCompare(b, 'ko'));
+      parts.push(`<optgroup label="${roleLabel[role]}">`);
+      for (const name of sorted) {
+        parts.push(`<option value="${name}"${disabled ? ' disabled' : ''}>${name}</option>`);
+      }
+      parts.push('</optgroup>');
+    }
+    return parts.join('');
+  }
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
     if (!k) return '';
-    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
+    // CDN 슬러그 재정의 (점·특수문자 제거 등)
+    const SLUG_FIX = {
+      'd.va':         'dva',
+      'wrecking-ball':'wrecking-ball',
+    };
+    const slug = SLUG_FIX[k] || k;
+    if (OW2_NEW.has(k)) {
+      return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${slug}.png`;
+    }
+    // OW1 영웅이지만 점이 있는 슬러그(d.va)는 URL에 그대로 써도 됨
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
+  // 이미지 로드 실패 시 대체 CDN 시도
+  function heroImgHtml(name, cls='') {
+    const primary = heroImgUrl(name);
+    if (!primary) return '<span style="font-size:1.1rem">🎮</span>';
+    // 미스포춘, 주노 등 누락 가능 영웅은 두 CDN 모두 시도
+    const k = OW_HEROES[name] || '';
+    const fallback = OW2_NEW.has(k)
+      ? \`https://blzgdapipro-a.akamaihd.net/hero/\${k}/icon-portrait.png\`
+      : \`https://d15f34w2p8l1cc.cloudfront.net/overwatch/\${(k||'').replace('.','')}.png\`;
+    return \`<img src="\${primary}" class="\${cls}"
+      style="width:100%;height:100%;object-fit:cover;"
+      onerror="this.src='\${fallback}';this.onerror=function(){this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'}" />\`;
   }
 
   // ── 팀 수 / 팀원 수 변경 시 → 팀장 + 선수 칸 자동 갱신
@@ -491,8 +588,7 @@
             <select class="p-h${n}" style="flex:1;background:var(--surface2);border:1px solid var(--border);
               border-radius:8px;color:var(--text);padding:7px 10px;font-size:.85rem;font-family:inherit;outline:none;"
               onchange="onHeroSelect(${id},${n},this.value)">
-              <option value="">-- 영웅 선택 --</option>
-              ${HERO_NAMES.map(h=>`<option>${h}</option>`).join('')}
+              ${buildHeroSelectOptions()}
             </select>
           </div>`).join('')}
         </div>
@@ -618,8 +714,8 @@
 
     const roomData = {
       meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now(),
-              createdBy: 'admin',
-              createdByName: '관리자' },
+              createdBy: window._currentUser?.id || 'unknown',
+              createdByName: window._currentUser?.name || '알 수 없음' },
       teams,
       players: playersObj,
       auction: {
@@ -666,8 +762,6 @@
   function checkAdminPw() {
     const val = document.getElementById('admin-pw-input').value;
     if (val === getAdminPw()) {
-      sessionStorage.setItem('dohyeon_admin', '1');
-      window._currentUser = { id: 'admin', name: '관리자', role: 'admin' };
       document.getElementById('admin-pw-section').style.display = 'none';
       document.getElementById('admin-room-section').style.display = '';
       loadRooms();
@@ -732,14 +826,15 @@
   // ── 폼 전체 저장
   // ── Firebase 다중 임시저장 ──────────────────────────────────────────
   function _draftsRef() {
-    if (!window._db || !window._dbFns) return null;
-    return window._dbFns.ref(window._db, 'drafts/admin');
+    const uid = window._currentUser?.id;
+    if (!uid || !window._db || !window._dbFns) return null;
+    return window._dbFns.ref(window._db, `drafts/${uid}`);
   }
 
   async function saveFormData() {
-    if (window._currentUser?.role !== 'admin') { showToast('관리자만 임시저장이 가능합니다'); return; }
+    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
     if (!window._db || !window._dbFns) { showToast('Firebase 연결 중입니다. 잠시 후 다시 시도해주세요'); return; }
-    const uid = 'admin';
+    const uid = window._currentUser?.id;
     const savedAt = Date.now();
     const draftId = `draft_${savedAt}`;
     const titleVal = document.getElementById('title').value.trim() || '제목 없음';
@@ -778,8 +873,8 @@
   }
 
   function checkSavedData() {
-    if (window._currentUser?.role !== 'admin' || !window._db || !window._dbFns) return;
-    const uid = 'admin';
+    if (window._currentUser?.guest || !window._db || !window._dbFns) return;
+    const uid = window._currentUser?.id;
     const { ref, get } = window._dbFns;
     get(ref(window._db, `drafts/${uid}`)).then(snap => {
       const info = document.getElementById('save-info');
@@ -793,7 +888,7 @@
 
   // ── 임시저장 모달 ──────────────────────────────────────────────────
   function openDraftModal() {
-    if (window._currentUser?.role !== 'admin') { showToast('관리자 로그인 후 이용 가능합니다'); return; }
+    if (window._currentUser?.guest) { showToast('비회원은 임시저장이 불가합니다'); return; }
     document.getElementById('draft-modal').style.display = '';
     renderDraftList();
   }
@@ -808,7 +903,7 @@
       area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">Firebase 연결 중...</div>';
       return;
     }
-    const uid = 'admin';
+    const uid = window._currentUser?.id;
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}`));
@@ -844,7 +939,7 @@
 
   async function loadDraft(draftId) {
     if (!confirm('저장된 내역을 불러오면 현재 입력 내용이 초기화됩니다. 계속할까요?')) return;
-    const uid = 'admin';
+    const uid = window._currentUser?.id;
     const { ref, get } = window._dbFns;
     try {
       const snap = await get(ref(window._db, `drafts/${uid}/${draftId}`));
@@ -901,7 +996,7 @@
 
   async function deleteDraft(draftId) {
     if (!confirm('이 임시저장을 삭제할까요?')) return;
-    const uid = 'admin';
+    const uid = window._currentUser?.id;
     try {
       await window._remove(window._dbFns.ref(window._db, `drafts/${uid}/${draftId}`));
       showToast('삭제 완료');
@@ -914,15 +1009,415 @@
 
   // ── 섹션 전환
   function showSection(name) {
-    document.getElementById('main-select').style.display    = name ? 'none' : '';
-    document.getElementById('section-create').style.display = name === 'create' ? '' : 'none';
-    document.getElementById('section-join').style.display   = name === 'join'   ? '' : 'none';
-    document.getElementById('section-admin').style.display  = name === 'admin'  ? '' : 'none';
-    if (name === 'create') { renderLeaders(); autoGeneratePlayers(); checkSavedData(); }
+    document.getElementById('main-select').style.display     = name ? 'none' : '';
+    document.getElementById('section-create').style.display  = name === 'create'  ? '' : 'none';
+    document.getElementById('section-join').style.display    = name === 'join'    ? '' : 'none';
+    document.getElementById('section-admin').style.display   = name === 'admin'   ? '' : 'none';
+    document.getElementById('section-myrooms').style.display = name === 'myrooms' ? '' : 'none';
+    document.getElementById('section-users').style.display   = name === 'users'   ? '' : 'none';
+    if (name === 'create')  { renderLeaders(); autoGeneratePlayers(); checkSavedData(); }
+    if (name === 'myrooms') { loadMyRoomList(); }
+    if (name === 'users')   { loadUsersList(); }
     if (name === 'admin' && document.getElementById('admin-room-section').style.display !== 'none') loadRooms();
   }
 
-  // ── IndexedDB (레거시 — Firebase로 이전됨, 코드 호환용 유지)
+  function initRouteFromPath() {} // Firebase Hosting 없이는 hash 방식 사용
+
+  // ── 내 방 목록 불러오기
+  async function loadMyRoomList() {
+    const uid = window._currentUser?.id;
+    if (!uid) return;
+    const sel = document.getElementById('myroom-select');
+    sel.innerHTML = '<option value="">불러오는 중...</option>';
+    document.getElementById('myroom-info').style.display = 'none';
+    try {
+      const { ref, get } = window._dbFns;
+      const snap = await get(ref(window._db, 'rooms'));
+      if (!snap.exists()) {
+        sel.innerHTML = '<option value="">만든 방이 없습니다</option>';
+        return;
+      }
+      const rooms = snap.val();
+      const mine = Object.entries(rooms)
+        .filter(([, r]) => r.meta?.createdBy === uid)
+        .sort((a, b) => (b[1].meta?.createdAt || 0) - (a[1].meta?.createdAt || 0));
+      if (mine.length === 0) {
+        sel.innerHTML = '<option value="">만든 방이 없습니다</option>';
+        return;
+      }
+      sel.innerHTML = '<option value="">-- 방을 선택하세요 --</option>' +
+        mine.map(([code, r]) => {
+          const title = r.meta?.title || code;
+          const dt = r.meta?.createdAt ? new Date(r.meta.createdAt).toLocaleDateString('ko-KR') : '';
+          const status = r.auction?.status || 'waiting';
+          const statusTxt = status === 'waiting' ? '대기' : status === 'finished' ? '완료' : '진행중';
+          return `<option value="${code}">[${code}] ${title} (${statusTxt} · ${dt})</option>`;
+        }).join('');
+      sel.onchange = () => showMyRoomInfo(sel.value, rooms);
+    } catch(e) {
+      sel.innerHTML = '<option value="">오류 발생</option>';
+    }
+  }
+
+  function showMyRoomInfo(code, rooms) {
+    const infoEl = document.getElementById('myroom-info');
+    if (!code) { infoEl.style.display = 'none'; return; }
+    const r = rooms[code];
+    if (!r) { infoEl.style.display = 'none'; return; }
+    const playerCount = Object.keys(r.players || {}).length;
+    const teamCount   = Object.keys(r.teams   || {}).length;
+    const settled     = Object.values(r.players || {}).filter(p => p.assignedTo != null).length;
+    const status      = r.auction?.status || 'waiting';
+    const statusTxt   = status === 'waiting' ? '⏳ 대기 중' : status === 'finished' ? '✅ 완료' : '🔴 진행 중';
+    infoEl.innerHTML  = `<strong style="color:var(--text);">${r.meta?.title || code}</strong>
+      &nbsp;&nbsp;방코드 <span style="color:var(--accent);font-weight:700;">${code}</span><br>
+      팀 ${teamCount}개 · 선수 ${playerCount}명 (낙찰 ${settled}명) · ${statusTxt}`;
+    infoEl.style.display = '';
+  }
+
+  // 내 방 불러와서 폼에 채우기 (수정 모드)
+  let _editRoomCode = null;
+  async function loadMyRoom() {
+    const code = document.getElementById('myroom-select').value;
+    if (!code) { showToast('방을 선택해주세요'); return; }
+    if (!confirm(`[${code}] 방을 불러옵니다.\n현재 입력 내용이 초기화됩니다. 계속할까요?`)) return;
+    try {
+      const { ref, get } = window._dbFns;
+      const snap = await get(ref(window._db, `rooms/${code}`));
+      if (!snap.exists()) { showToast('방을 찾을 수 없습니다'); return; }
+      const room = snap.val();
+      const m = room.meta || {};
+      // 기본 설정 채우기
+      if (m.title)         document.getElementById('title').value           = m.title;
+      if (m.teamCount)     document.getElementById('teamCount').value        = m.teamCount;
+      if (m.membersPerTeam) document.getElementById('membersPerTeam').value  = m.membersPerTeam;
+      if (m.points)        document.getElementById('points').value           = m.points;
+      if (m.timerSec)      document.getElementById('timerSec').value         = m.timerSec;
+      if (m.minBid)        document.getElementById('minBid').value           = m.minBid;
+      // 팀장 채우기
+      const teams = Object.values(room.teams || {});
+      teams.forEach((t, i) => {
+        if (t.photo) leaderPhotos[i] = t.photo;
+      });
+      renderLeaders();
+      // 팀장 이름 채우기
+      setTimeout(() => {
+        const items = document.querySelectorAll('.leader-item');
+        teams.forEach((t, i) => {
+          const nameInput = items[i]?.querySelector('.l-name');
+          if (nameInput) nameInput.value = t.name || '';
+        });
+      }, 100);
+      // 선수 채우기
+      const players = Object.values(room.players || {});
+      playerPhotos = {};
+      document.querySelector('#player-form-wrap').innerHTML = '';
+      players.forEach((p, i) => {
+        addPlayer();
+        setTimeout(() => {
+          const cards = document.querySelectorAll('.pfc');
+          const card  = cards[i];
+          if (!card) return;
+          if (p.name)     card.querySelector('.p-name')?.setAttribute('value', p.name);
+          if (p.role)     card.querySelector('.p-role').value  = p.role;
+          if (p.grade)    card.querySelector('.p-grade').value = p.grade;
+          if (p.curTier)  card.querySelector('.p-cur')?.setAttribute('value', p.curTier);
+          if (p.prevTier) card.querySelector('.p-prev')?.setAttribute('value', p.prevTier);
+          if (p.peakTier) card.querySelector('.p-peak')?.setAttribute('value', p.peakTier);
+          if (p.hero1)    card.querySelector('.p-h1')?.setAttribute('value', p.hero1);
+          if (p.hero2)    card.querySelector('.p-h2')?.setAttribute('value', p.hero2);
+          if (p.hero3)    card.querySelector('.p-h3')?.setAttribute('value', p.hero3);
+          if (p.style)    card.querySelector('.p-style')?.setAttribute('value', p.style);
+          if (p.intro)    card.querySelector('.p-intro')?.setAttribute('value', p.intro);
+          if (p.photo)    { playerPhotos[i] = p.photo; card.querySelector('.p-photo').value = p.photo; }
+          // input 값 직접 세팅 (setAttribute는 초기값만 설정)
+          card.querySelectorAll('input, select, textarea').forEach(el => {
+            const attr = el.getAttribute('value');
+            if (attr !== null && el.tagName === 'INPUT') el.value = attr;
+          });
+        }, 150);
+      });
+      _editRoomCode = code;
+      // 방 만들기 버튼을 "방 업데이트" 버튼으로 변경
+      const createBtn = document.getElementById('create-btn');
+      createBtn.textContent = `🔄 [${code}] 방 업데이트`;
+      createBtn.style.background = 'linear-gradient(135deg,#3b82f6,#2563eb)';
+      createBtn.onclick = updateRoom;
+      // 수정 중 안내 배너
+      let banner = document.getElementById('edit-mode-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'edit-mode-banner';
+        banner.style.cssText = 'background:rgba(59,130,246,.15);border:1px solid #3b82f6;border-radius:8px;padding:10px 14px;font-size:.82rem;color:#93c5fd;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;';
+        const sectionCreate = document.getElementById('section-create');
+        sectionCreate.insertBefore(banner, sectionCreate.children[1]);
+      }
+      banner.innerHTML = `✏️ <strong style="color:#60a5fa;">[${code}]</strong> 방 수정 중 &nbsp;
+        <button onclick="cancelEditMode()" style="background:none;border:1px solid #3b82f6;color:#93c5fd;border-radius:6px;padding:3px 10px;font-size:.75rem;cursor:pointer;font-family:inherit;">취소</button>`;
+      showSection('create');
+      showToast(`✅ [${code}] 방 데이터 불러오기 완료`);
+    } catch(e) {
+      showToast('오류: ' + e.message);
+    }
+  }
+
+  function cancelEditMode() {
+    _editRoomCode = null;
+    const createBtn = document.getElementById('create-btn');
+    createBtn.textContent = '방 만들기 →';
+    createBtn.style.background = '';
+    createBtn.onclick = createRoom;
+    const banner = document.getElementById('edit-mode-banner');
+    if (banner) banner.remove();
+    showToast('수정 취소됨');
+  }
+
+  // ── 이용자 관리 ────────────────────────────────────────────────────
+  let _allUsers = {};   // 전체 캐시
+  let _userRooms = {};  // uid → 방 목록
+
+  async function loadUsersList() {
+    const el    = document.getElementById('users-list-main');
+    const stats = document.getElementById('users-stats');
+    el.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">불러오는 중...</div>`;
+    stats.innerHTML = '';
+    try {
+      const { ref, get } = window._dbFns;
+      const [usersSnap, roomsSnap] = await Promise.all([
+        get(ref(window._db, 'users')),
+        get(ref(window._db, 'rooms')),
+      ]);
+      if (!usersSnap.exists()) {
+        el.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">가입된 이용자가 없습니다</div>`;
+        return;
+      }
+      _allUsers  = usersSnap.val();
+      const rooms = roomsSnap.exists() ? roomsSnap.val() : {};
+      _userRooms = {};
+      Object.entries(rooms).forEach(([code, room]) => {
+        const uid = room.meta?.createdBy;
+        if (!uid) return;
+        if (!_userRooms[uid]) _userRooms[uid] = [];
+        _userRooms[uid].push({
+          code, title: room.meta?.title || code,
+          status: room.auction?.status || 'waiting',
+          createdAt: room.meta?.createdAt || 0
+        });
+      });
+      // 요약 통계
+      const total   = Object.keys(_allUsers).length;
+      const admins  = Object.values(_allUsers).filter(u => u.role === 'admin').length;
+      const hasRoom = Object.keys(_userRooms).length;
+      stats.innerHTML = [
+        ['👤 총 회원', total],
+        ['👑 관리자',  admins],
+        ['🏠 방 생성자', hasRoom],
+      ].map(([label, val]) =>
+        `<div style="flex:1;min-width:80px;background:var(--surface2);border:1px solid var(--border);
+          border-radius:8px;padding:10px 12px;text-align:center;">
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:3px;">${label}</div>
+          <div style="font-size:1.3rem;font-weight:700;font-family:'Black Han Sans',sans-serif;color:var(--text);">${val}</div>
+        </div>`
+      ).join('');
+      renderUserCards(Object.entries(_allUsers));
+    } catch(e) {
+      el.innerHTML = `<div style="color:var(--danger);font-size:.82rem;text-align:center;padding:20px;">오류: ${e.message}</div>`;
+    }
+  }
+
+  function renderUserCards(entries) {
+    const el = document.getElementById('users-list-main');
+    if (!entries.length) {
+      el.innerHTML = `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">검색 결과가 없습니다</div>`;
+      return;
+    }
+    // 가입일 최신순 정렬
+    entries.sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    el.innerHTML = entries.map(([uid, u]) => {
+      const dt      = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ko-KR') : '-';
+      const isAdmin = u.role === 'admin';
+      const myRooms = (_userRooms[uid] || []).sort((a, b) => b.createdAt - a.createdAt);
+      const roomBadges = myRooms.map(r => {
+        const stClr = r.status === 'finished' ? '#64748b' : r.status === 'waiting' ? '#3b82f6' : '#f59e0b';
+        const stTxt = r.status === 'finished' ? '완료' : r.status === 'waiting' ? '대기' : '진행중';
+        return `<span style="font-size:.68rem;padding:3px 8px;border-radius:5px;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);cursor:pointer;
+          color:${stClr};" onclick="location.href='host.html?room=${r.code}'" title="${r.title}">
+          ${r.code} · ${r.title} · ${stTxt}
+        </span>`;
+      }).join('');
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+        <!-- 상단: 이름 + 액션 버튼 -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:1rem;">${u.name || '-'}</span>
+            <span style="color:var(--muted);font-size:.78rem;">@${uid}</span>
+            ${isAdmin ? `<span style="font-size:.65rem;padding:2px 8px;border-radius:10px;
+              background:rgba(245,158,11,.2);color:var(--accent);border:1px solid var(--accent);font-weight:700;">👑 관리자</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button onclick="toggleAdminUser('${uid}', ${isAdmin})"
+              style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;
+              background:${isAdmin ? 'rgba(239,68,68,.12)' : 'rgba(245,158,11,.12)'};
+              border:1px solid ${isAdmin ? 'var(--danger)' : 'var(--accent)'};
+              color:${isAdmin ? 'var(--danger)' : 'var(--accent)'};">
+              ${isAdmin ? '관리자 해제' : '관리자 설정'}
+            </button>
+            <button onclick="deleteUser('${uid}', '${u.name || uid}')"
+              style="font-size:.72rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;
+              background:rgba(239,68,68,.1);border:1px solid var(--danger);color:var(--danger);">
+              🗑 삭제
+            </button>
+          </div>
+        </div>
+        <!-- 상세 정보 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.78rem;margin-bottom:${myRooms.length ? '10' : '0'}px;">
+          <div><span style="color:var(--muted);">📱 전화번호</span>&nbsp;&nbsp;<span style="color:var(--text);font-weight:600;">${u.phone || '-'}</span></div>
+          <div><span style="color:var(--muted);">✉ 이메일</span>&nbsp;&nbsp;<span style="color:var(--text);">${u.email || '-'}</span></div>
+          <div><span style="color:var(--muted);">📅 가입일</span>&nbsp;&nbsp;<span style="color:var(--text);">${dt}</span></div>
+          <div><span style="color:var(--muted);">🏠 생성 방</span>&nbsp;&nbsp;<span style="color:var(--accent2);font-weight:700;">${myRooms.length}개</span></div>
+        </div>
+        ${myRooms.length ? `
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">생성한 방 (클릭 시 입장)</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">${roomBadges}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function filterUsers() {
+    const q = document.getElementById('user-search').value.trim().toLowerCase();
+    if (!q) { renderUserCards(Object.entries(_allUsers)); return; }
+    const filtered = Object.entries(_allUsers).filter(([uid, u]) =>
+      uid.toLowerCase().includes(q) ||
+      (u.name || '').toLowerCase().includes(q) ||
+      (u.phone || '').includes(q) ||
+      (u.email || '').toLowerCase().includes(q)
+    );
+    renderUserCards(filtered);
+  }
+
+  async function toggleAdminUser(uid, isAdmin) {
+    const { ref, set } = window._dbFns;
+    const msg = isAdmin ? `@${uid} 관리자 권한을 해제하시겠습니까?` : `@${uid} 를 관리자로 설정하시겠습니까?`;
+    if (!confirm(msg)) return;
+    await set(ref(window._db, `users/${uid}/role`), isAdmin ? null : 'admin');
+    showToast(isAdmin ? '관리자 해제 완료' : '👑 관리자 설정 완료');
+    loadUsersList();
+  }
+
+  async function deleteUser(uid, name) {
+    if (!confirm(`「${name}」(@${uid}) 회원을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+    try {
+      await window._remove(window._dbFns.ref(window._db, `users/${uid}`));
+      showToast(`✅ @${uid} 삭제 완료`);
+      loadUsersList();
+    } catch(e) { showToast('삭제 실패: ' + e.message); }
+  }
+
+  // 방 업데이트 (수정 저장)
+  async function updateRoom() {
+    if (!_editRoomCode) { showToast('수정할 방이 선택되지 않았습니다'); return; }
+    const code = _editRoomCode;
+    const { ref, get, set } = window._dbFns;
+    const { update } = window._dbFns;
+    // 현재 폼 데이터 수집 (createRoom과 동일한 방식)
+    const title    = document.getElementById('title').value.trim() || '도현 유인원 컵';
+    const teamCount       = parseInt(document.getElementById('teamCount').value)      || 6;
+    const membersPerTeam  = parseInt(document.getElementById('membersPerTeam').value) || 6;
+    const points          = parseInt(document.getElementById('points').value)         || 100;
+    const timerSec        = parseInt(document.getElementById('timerSec').value)       || 10;
+    const minBid          = parseInt(document.getElementById('minBid').value)         || 1;
+    const leaderEls       = document.querySelectorAll('.leader-item');
+    const leaderPhotoList = Object.values(leaderPhotos);
+    const leaders         = [...leaderEls].map(el => el.querySelector('.l-name')?.value || '');
+    if (leaders.some(n => !n.trim())) { showToast('팀장 이름을 모두 입력해주세요'); return; }
+    const playerCards = document.querySelectorAll('.pfc');
+    const players = [...playerCards].map(card => ({
+      name:     card.querySelector('.p-name')?.value    || '',
+      role:     card.querySelector('.p-role')?.value    || '',
+      grade:    card.querySelector('.p-grade')?.value   || '고',
+      curTier:  card.querySelector('.p-cur')?.value     || '',
+      prevTier: card.querySelector('.p-prev')?.value    || '',
+      peakTier: card.querySelector('.p-peak')?.value    || '',
+      hero1:    card.querySelector('.p-h1')?.value      || '',
+      hero2:    card.querySelector('.p-h2')?.value      || '',
+      hero3:    card.querySelector('.p-h3')?.value      || '',
+      style:    card.querySelector('.p-style')?.value   || '',
+      intro:    card.querySelector('.p-intro')?.value   || '',
+      photo:    card.querySelector('.p-photo')?.value   || '',
+    })).filter(p => p.name.trim());
+    if (players.length === 0) { showToast('선수를 최소 1명 이상 입력해주세요'); return; }
+    // 경매 진행 중 여부 확인
+    const { ref: _r, get: _g } = window._dbFns;
+    const _statusSnap = await _g(_r(window._db, `rooms/${code}/auction/status`));
+    const _currentStatus = _statusSnap.val();
+    const _isActive = _currentStatus === 'preview' || _currentStatus === 'bidding';
+    if (_isActive) {
+      const proceed = confirm(
+        `⚠️ 경고: [${code}] 방은 현재 경매가 진행 중입니다!
+
+업데이트하면 모든 경매 데이터(낙찰 기록, 팀 배정, 포인트)가 초기화됩니다.
+
+정말 초기화하고 업데이트하시겠습니까?
+(취소하면 /admin-panel 에서 메타 정보만 수정하세요)`
+      );
+      if (!proceed) return;
+    } else if (_currentStatus === 'finished') {
+      if (!confirm(`[${code}] 방은 경매가 완료된 상태입니다.
+업데이트하면 경매 데이터가 초기화됩니다. 계속할까요?`)) return;
+    } else {
+      if (!confirm(`[${code}] 방을 업데이트합니다. 계속할까요?`)) return;
+    }
+    const btn = document.getElementById('create-btn');
+    btn.textContent = '업데이트 중...'; btn.style.opacity = '.5'; btn.style.pointerEvents = 'none';
+    try {
+      // 기존 방 데이터에서 teams의 leaderToken은 유지
+      const { ref: dbRef, get: dbGet } = window._dbFns;
+      const snap = await dbGet(dbRef(window._db, `rooms/${code}/teams`));
+      const oldTeams = snap.val() || {};
+      const teams = {};
+      leaders.forEach((name, i) => {
+        const tk = `team_${i}`;
+        teams[tk] = {
+          name, points, members: [],
+          photo: leaderPhotoList[i] || '',
+          leaderToken: oldTeams[tk]?.leaderToken || Math.random().toString(36).substring(2, 10)
+        };
+      });
+      const ROLE_ORDER  = { '딜러': 0, '탱커': 1, '힐러': 2, '유동': 3 };
+      const GRADE_ORDER = { '고': 0, '저': 1 };
+      const sorted = [...players].sort((a, b) => {
+        const rA = ROLE_ORDER[a.role] ?? 99, rB = ROLE_ORDER[b.role] ?? 99;
+        if (rA !== rB) return rA - rB;
+        return (GRADE_ORDER[a.grade] ?? 1) - (GRADE_ORDER[b.grade] ?? 1);
+      });
+      const playersObj = {};
+      sorted.forEach((p, i) => { playersObj[`player_${i}`] = p; });
+      const { ref: dbRef, get: dbGet, set: dbSet, update: dbUpdate } = window._dbFns;
+      const createdAtSnap = await dbGet(dbRef(window._db, `rooms/${code}/meta/createdAt`));
+      const updData = {
+        [`rooms/${code}/meta`]: { title, teamCount, membersPerTeam, points, timerSec, minBid,
+          createdAt: createdAtSnap.val() || Date.now(),
+          updatedAt: Date.now(),
+          createdBy: window._currentUser?.id || 'unknown',
+          createdByName: window._currentUser?.name || '알 수 없음' },
+        [`rooms/${code}/teams`]:   teams,
+        [`rooms/${code}/players`]: playersObj,
+        [`rooms/${code}/auction`]: {
+          status: 'waiting', order: Object.keys(playersObj),
+          currentPlayer: null, currentBid: 0, currentLeader: null, timerEndsAt: null, log: null
+        }
+      };
+      await dbUpdate(dbRef(window._db), updData);
+      showToast(`✅ [${code}] 방 업데이트 완료!`);
+      cancelEditMode();
+      setTimeout(() => { window.location.href = `host.html?room=${code}`; }, 1200);
+    } catch(e) {
+      showToast('오류: ' + e.message); console.error(e);
+    } finally {
+      btn.textContent = `🔄 [${code}] 방 업데이트`; btn.style.opacity = ''; btn.style.pointerEvents = '';
+    }
+  }
   const DB_NAME = 'dohyeon_db', DB_STORE = 'form', DB_KEY = 'form_data';
   function openIDB() {
     return new Promise((res, rej) => {
@@ -953,20 +1448,71 @@
   // 초기화 (섹션은 메인 선택에서 시작)
   // renderLeaders/autoGeneratePlayers 는 showSection('create') 시 호출됨
 
-  // 비회원으로 자동 진입
-  window._currentUser = { guest: true, name: '비회원', id: 'guest' };
-  window.addEventListener('DOMContentLoaded', () => {
+  // ── 로그인 체크 + 비회원 지원
+  (function() {
+    const user = sessionStorage.getItem('dohyeon_user');
+    // 비회원 세션도 허용 (guest 플래그)
+    if (!user) { location.href = 'login.html'; return; }
+    const u = JSON.parse(user);
     const bar = document.getElementById('user-bar');
-    if (bar) bar.style.display = 'none';
-    // 관리자 세션 유지 확인
-    if (sessionStorage.getItem('dohyeon_admin') === '1') {
-      window._currentUser = { id: 'admin', name: '관리자', role: 'admin' };
-      const pwSec = document.getElementById('admin-pw-section');
-      if (pwSec) pwSec.style.display = 'none';
-      const roomSec = document.getElementById('admin-room-section');
-      if (roomSec) roomSec.style.display = '';
+    const nameEl = document.getElementById('user-name-disp');
+    if (bar) bar.style.display = 'flex';
+    if (nameEl) {
+      if (u.guest) {
+        nameEl.innerHTML = `비회원 <span style="font-size:.7rem;color:var(--muted);">(임시저장 불가)</span>`;
+        // 비회원은 임시저장 버튼 숨김
+        const saveBtns = document.getElementById('save-btns');
+        if (saveBtns) saveBtns.style.display = 'none';
+      } else {
+        nameEl.textContent = u.name;
+        if (u.role === 'admin') {
+          nameEl.innerHTML = `${u.name} <span style="font-size:.7rem;padding:2px 7px;border-radius:8px;
+            background:rgba(245,158,11,.2);color:var(--accent);border:1px solid var(--accent);
+            font-weight:700;margin-left:4px;">👑 관리자</span>`;
+          document.getElementById('admin-pw-section').style.display = 'none';
+          const roomSec = document.getElementById('admin-room-section');
+          if (roomSec) roomSec.style.display = '';
+        }
+        // role 없으면 Firebase에서 확인
+        if (!u.role) {
+          window.addEventListener('load', () => {
+            if (!window._dbFns) return;
+            const { ref, get } = window._dbFns;
+            get(ref(window._db, `users/${u.id}/role`)).then(snap => {
+              if (snap.exists() && snap.val() === 'admin') {
+                u.role = 'admin';
+                sessionStorage.setItem('dohyeon_user', JSON.stringify(u));
+                // 관리자 버튼 즉시 표시 (reload 없이)
+                const usersBtn = document.getElementById('users-main-btn');
+                if (usersBtn) usersBtn.style.display = '';
+                document.getElementById('admin-pw-section').style.display = 'none';
+                const roomSec = document.getElementById('admin-room-section');
+                if (roomSec) roomSec.style.display = '';
+              }
+            }).catch(()=>{});
+          });
+        }
+      }
+      // 로그인 회원이면 "내 방 수정하기" 버튼 표시
+      if (!u.guest) {
+        const myroomsBtn = document.getElementById('myrooms-main-btn');
+        if (myroomsBtn) myroomsBtn.style.display = '';
+      }
+      // 관리자이면 "이용자 관리" 버튼도 표시
+      if (u.role === 'admin') {
+        const usersBtn = document.getElementById('users-main-btn');
+        if (usersBtn) usersBtn.style.display = '';
+      }
     }
-  });
+    window._currentUser = u;
+  })();
+
+  function doLogout() {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      sessionStorage.removeItem('dohyeon_user');
+      location.href = 'login.html';
+    }
+  }
 </script>
 </body>
 </html>
