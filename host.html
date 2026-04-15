@@ -155,31 +155,31 @@
     .btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 
     /* 팀 패널 */
-    .team-panel{border-radius:14px;overflow:hidden;border:2px solid transparent;margin-bottom:10px;transition:border-color .3s;}
-    .team-panel.leading{border-color:#f59e0b;box-shadow:0 0 14px rgba(245,158,11,.4);}
-    .team-panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;}
-    .team-panel-name{font-size:.78rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.5px;}
-    .team-panel-pts{font-family:'Black Han Sans',sans-serif;font-size:1rem;color:rgba(255,255,255,.95);}
-    .team-panel-pts span{font-size:.6rem;font-family:'Pretendard',sans-serif;font-weight:400;opacity:.7;margin-left:2px;}
-    .team-panel-body{display:flex;align-items:flex-start;gap:8px;padding:8px 12px 12px;}
-    .team-leader-box{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
-    .team-leader-photo{width:56px;height:56px;border-radius:8px;background:rgba(0,0,0,.25);
-      border:2px solid rgba(255,255,255,.3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+    .team-panel{border-radius:12px;overflow:hidden;border:2px solid transparent;margin-bottom:8px;transition:border-color .3s;}
+    .team-panel.leading{border-color:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.4);}
+    .team-panel-header{display:flex;align-items:center;justify-content:space-between;padding:7px 12px 5px;}
+    .team-panel-name{font-size:.75rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.5px;}
+    .team-panel-pts{font-family:'Black Han Sans',sans-serif;font-size:.95rem;color:rgba(255,255,255,.95);}
+    .team-panel-pts span{font-size:.58rem;font-family:'Pretendard',sans-serif;font-weight:400;opacity:.7;margin-left:2px;}
+    .team-panel-body{display:flex;align-items:flex-start;gap:7px;padding:6px 10px 10px;}
+    .team-leader-box{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+    .team-leader-photo{width:48px;height:48px;border-radius:7px;background:rgba(0,0,0,.25);
+      border:2px solid rgba(255,255,255,.3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
     .team-leader-photo img{width:100%;height:100%;object-fit:cover;}
-    .team-leader-name{font-size:.65rem;color:rgba(255,255,255,.85);font-weight:700;
-      max-width:60px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .team-leader-badge{font-size:.55rem;background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);
-      border-radius:4px;padding:1px 5px;border:1px solid rgba(255,255,255,.2);}
+    .team-leader-name{font-size:.6rem;color:rgba(255,255,255,.85);font-weight:700;
+      max-width:52px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .team-leader-badge{font-size:.52rem;background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);
+      border-radius:3px;padding:1px 4px;border:1px solid rgba(255,255,255,.2);}
     .team-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;flex:1;}
     .team-slot{background:rgba(0,0,0,.2);border-radius:6px;aspect-ratio:1;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       border:1px solid rgba(255,255,255,.1);overflow:hidden;position:relative;}
     .team-slot.filled{background:rgba(0,0,0,.15);}
     .team-slot-photo{width:100%;height:100%;object-fit:cover;}
-    .team-slot-num{font-size:.9rem;color:rgba(255,255,255,.25);font-weight:700;}
+    .team-slot-num{font-size:.85rem;color:rgba(255,255,255,.2);font-weight:700;}
     .team-slot-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);
       font-size:.48rem;text-align:center;padding:1px 2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .team-slot-grade{position:absolute;top:2px;left:2px;font-size:.55rem;line-height:1;}
+    .team-slot-grade{position:absolute;top:2px;left:2px;font-size:.52rem;line-height:1;}
 
     /* 팀 그리드 (레거시) */
 
@@ -490,6 +490,11 @@
     gb.className = 'pc-grade-badge ' + (grade==='고'?'gb-고':'gb-저');
     gb.textContent = grade==='고'?'🔴 고티어 매물':'🔵 저티어 매물';
 
+    // 선수 사진
+    const pcPhoto = document.getElementById('pc-photo');
+    if (p.photo) { pcPhoto.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" />`; }
+    else { pcPhoto.innerHTML = '👤'; }
+
     document.getElementById('pc-name').textContent = p.name;
 
     // 티어 정보
@@ -776,30 +781,18 @@
       const isLeading = k === auction.currentLeader;
       const color     = TEAM_COLORS[idx % TEAM_COLORS.length];
       const members   = t.members || [];
-
-      const leaderPhoto = t.photo
-        ? `<img src="${t.photo}" />`
-        : `<span style="font-size:1.4rem;">👤</span>`;
-
-      const slots = Array.from({length: maxSlots}, (_, i) => {
-        const pid = members[i];
-        const p   = pid ? players[pid] : null;
-        if (p) {
-          const grade   = p.grade === '고' ? '🔴' : '🔵';
-          const photoEl = p.photo
-            ? `<img class="team-slot-photo" src="${p.photo}" />`
-            : `<span style="font-size:.7rem;color:rgba(255,255,255,.6);">${i+2}</span>`;
-          return `<div class="team-slot filled">
-            ${photoEl}
-            <div class="team-slot-grade">${grade}</div>
-            <div class="team-slot-name">${p.name}</div>
-          </div>`;
+      const leaderPhoto = t.photo ? `<img src="${t.photo}" />` : `<span style="font-size:1.2rem;">👤</span>`;
+      const slots = Array.from({length:maxSlots},(_,i)=>{
+        const pid=members[i]; const p=pid?players[pid]:null;
+        if(p){
+          const grade=p.grade==='고'?'🔴':'🔵';
+          const photoEl=p.photo?`<img class="team-slot-photo" src="${p.photo}" />`:`<span style="font-size:.65rem;color:rgba(255,255,255,.5);">${i+2}</span>`;
+          return `<div class="team-slot filled">${photoEl}<div class="team-slot-grade">${grade}</div><div class="team-slot-name">${p.name}</div></div>`;
         }
         return `<div class="team-slot"><span class="team-slot-num">${i+2}</span></div>`;
       }).join('');
-
       return `<div class="team-panel${isLeading?' leading':''}"
-          style="background:${color.light};border:2px solid ${isLeading?'#f59e0b':'transparent'};">
+          style="background:${color.light};border-color:${isLeading?'#f59e0b':'transparent'}">
         <div class="team-panel-header" style="background:${color.bg};">
           <div class="team-panel-name">TEAM ${t.name}</div>
           <div class="team-panel-pts">${t.points}<span>pt</span></div>
@@ -903,13 +896,29 @@
           setTimeout(() => { card.style.transform = 'scale(1)'; }, 300);
         }
 
-        // 마지막 공개 후 → 잠깐 보여주고 경매 시작
+        // 마지막 공개 후 → 5초 카운트다운 후 경매 시작
         if (i === shuffled.length - 1) {
           msg.textContent = `🎉 추첨 완료! 1순위: ${roomData.teams[shuffled[0]]?.name}`;
-          setTimeout(() => startAuction(), 1800);
+          setTimeout(() => startCountdown(msg), 1800);
         }
       }, i * 450);
     });
+  }
+
+  function startCountdown(msgEl) {
+    let count = 5;
+    msgEl.style.color = 'var(--accent)';
+    msgEl.textContent = `잠시 후 경매를 시작합니다… ${count}`;
+    const iv = setInterval(() => {
+      count--;
+      if (count > 0) {
+        msgEl.textContent = `잠시 후 경매를 시작합니다… ${count}`;
+      } else {
+        clearInterval(iv);
+        msgEl.textContent = '🚀 경매 시작!';
+        startAuction();
+      }
+    }, 1000);
   }
 
   function runLottery() { startWithLottery(); }

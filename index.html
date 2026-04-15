@@ -486,9 +486,9 @@
             <div id="hi-${id}-${n}" style="width:40px;height:40px;border-radius:6px;overflow:hidden;
               background:var(--surface);border:1px solid var(--border);flex-shrink:0;
               display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🎮</div>
-            <select class="p-h${n}" style="flex:1;background:var(--surface2);border:1px solid var(--border);
-              border-radius:8px;color:var(--text);padding:7px 10px;font-size:.85rem;font-family:inherit;outline:none;"
-              onchange="onHeroSelect(${id},${n},this.value)">
+            <select class="p-h${n}" data-pid="${id}" data-slot="${n}"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);
+              border-radius:8px;color:var(--text);padding:7px 10px;font-size:.85rem;font-family:inherit;outline:none;">
               <option value="">-- 영웅 선택 --</option>
               ${HERO_NAMES.map(h=>`<option>${h}</option>`).join('')}
             </select>
@@ -504,6 +504,12 @@
         <input class="p-intro" type="text" placeholder="예: 고점 뜨면 못 말려요" /></div>
     `;
     document.getElementById('players-list').appendChild(d);
+    // 영웅 select에 addEventListener 부착 (innerHTML onchange 대신)
+    d.querySelectorAll('select[data-pid]').forEach(sel => {
+      sel.addEventListener('change', function() {
+        onHeroSelect(parseInt(this.dataset.pid), parseInt(this.dataset.slot), this.value);
+      });
+    });
     updateHint();
   }
 
@@ -539,7 +545,7 @@
 
   // ── 방 만들기
   // ── 사진 압축 (비동기 - img.onload 보장)
-  function compressPhoto(dataUrl, maxW=200) {
+  function compressPhoto(dataUrl, maxW=300) {
     if (!dataUrl || !dataUrl.startsWith('data:image')) return Promise.resolve(dataUrl);
     return new Promise(resolve => {
       const img = new Image();
@@ -547,10 +553,11 @@
         try {
           const canvas = document.createElement('canvas');
           const scale = Math.min(1, maxW / Math.max(img.width, 1));
-          canvas.width  = img.width  * scale;
-          canvas.height = img.height * scale;
+          canvas.width  = Math.max(1, Math.round(img.width  * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
           canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
+          const result = canvas.toDataURL('image/jpeg', 0.75);
+          resolve(result && result !== 'data:,' ? result : dataUrl);
         } catch(e) { resolve(dataUrl); }
       };
       img.onerror = () => resolve(dataUrl);
