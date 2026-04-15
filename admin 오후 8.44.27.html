@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.jsdelivr.net https://fonts.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleapis.com wss://*.firebaseio.com wss://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://blzgdapipro-a.akamaihd.net https://d15f34w2p8l1cc.cloudfront.net;">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>관리자 패널 - 도현 유인원 컵</title>
@@ -382,6 +381,8 @@
   };
   const HERO_NAMES = Object.keys(HERO_IMG).sort((a,b) => a.localeCompare(b, 'ko'));
   function heroImgUrl(name) { return HERO_IMG[name] || ''; }
+    return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
+  }
 
   // ── 방 코드
   const params = new URLSearchParams(location.search);

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RØDE 도현 배 유인원 컵</title>
+  <meta property="og:title" content="RØDE 도현 배 유인원 컵" />
+  <meta property="og:description" content="By ONSIDE COMPANY" />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    :root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e3a5f;
+      --accent:#f59e0b;--accent2:#3b82f6;--text:#e2e8f0;--muted:#64748b;
+      --danger:#ef4444;--success:#22c55e;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;
+      min-height:100vh;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;padding:20px;
+      background-image:radial-gradient(ellipse at 20% 50%,rgba(59,130,246,.06),transparent 60%),
+                       radial-gradient(ellipse at 80% 20%,rgba(245,158,11,.06),transparent 60%);}
+    .wrap{width:100%;max-width:440px;}
+    .logo-area{text-align:center;margin-bottom:32px;}
+    .logo-sub{font-family:'Pretendard',sans-serif;font-weight:600;font-size:.9rem;color:var(--muted);margin-bottom:6px;}
+    .logo{font-family:'Pretendard',sans-serif;font-weight:900;font-size:2.2rem;color:var(--accent);letter-spacing:-1px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;}
+    .fg{margin-bottom:14px;}
+    label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px;}
+    input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      color:var(--text);padding:11px 14px;font-size:.95rem;font-family:inherit;outline:none;transition:border .2s;}
+    input:focus{border-color:var(--accent2);}
+    .btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:inherit;
+      font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#d97706);color:#0a0e1a;}
+    .btn-primary:hover{opacity:.9;transform:translateY(-1px);}
+    .btn-guest{width:100%;padding:13px;border:none;border-radius:10px;font-family:inherit;
+      font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;
+      background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+    .btn-guest:hover{border-color:var(--accent2);}
+    .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:.8rem;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+    .msg{font-size:.8rem;padding:8px 12px;border-radius:7px;margin-bottom:12px;text-align:center;display:none;}
+    .msg.err{background:rgba(239,68,68,.12);border:1px solid var(--danger);color:var(--danger);}
+    footer{margin-top:16px;text-align:center;font-size:.65rem;color:#334155;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-area">
+    <div class="logo-sub">RØDE와 함께하는</div>
+    <div class="logo">도현 배 유인원 컵</div>
+  </div>
+
+  <div class="card">
+    <div id="msg" class="msg"></div>
+
+    <!-- 비회원 시작 -->
+    <button class="btn-guest" onclick="doGuestLogin()" style="font-size:1.05rem;padding:16px;margin-bottom:0;">
+      👤 바로 시작하기
+    </button>
+
+    <div class="divider">관리자</div>
+
+    <!-- 관리자 로그인 -->
+    <div class="fg">
+      <label>관리자 비밀번호</label>
+      <input id="admin-pw" type="password" placeholder="비밀번호 입력"
+        onkeydown="if(event.key==='Enter')doAdminLogin()" />
+    </div>
+    <button class="btn btn-primary" onclick="doAdminLogin()"
+      style="background:linear-gradient(135deg,#1e3a5f,#2563eb);">⚙ 관리자로 입장</button>
+  </div>
+
+  <footer style="margin-top:20px;padding-bottom:20px;"></footer>
+</div>
+
+<script>
+  const ADMIN_PW = 'onside11!!';
+
+  function doGuestLogin() {
+    sessionStorage.removeItem('dohyeon_admin');
+    location.href = 'index.html';
+  }
+
+  function doAdminLogin() {
+    const pw = document.getElementById('admin-pw').value;
+    if (pw === ADMIN_PW) {
+      sessionStorage.setItem('dohyeon_admin', '1');
+      location.href = 'index.html';
+    } else {
+      const el = document.getElementById('msg');
+      el.textContent = '비밀번호가 틀렸습니다';
+      el.className = 'msg err';
+      el.style.display = '';
+    }
+  }
+</script>
+</body>
+</html>
