@@ -193,8 +193,44 @@
       <div class="fg"><label>입찰 시간 (초)</label><input type="number" id="timerSec" value="10" min="5" max="60" /></div>
       <div class="fg"><label>최소 입찰 단위</label><input type="number" id="minBid" value="10" min="1" /></div>
     </div>
-    <p class="sec-title">팀장 이름 & 사진</p>
+    <div class="fg" style="margin-bottom:6px;">
+      <label>방 비밀번호 <span style="color:var(--muted);font-size:.75rem;font-weight:400;">(선택 · 링크 유출 방지용)</span></label>
+      <div style="position:relative;">
+        <input type="password" id="roomPw" placeholder="비밀번호 없이 누구나 입장 가능"
+          style="padding-right:44px;" />
+        <button type="button" onclick="togglePwVisible()"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+          background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 4px;"
+          id="pw-eye-btn">👁</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">
+        설정 시 링크로 접속해도 비밀번호를 알아야 입장할 수 있습니다. 주최자·관리자는 제외.
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px;">
+      <p class="sec-title" style="margin:0;">팀장 이름 & 사진</p>
+      <div style="display:flex;gap:6px;">
+        <button onclick="openLeaderLibModal()" style="background:none;border:1px solid var(--accent2);border-radius:6px;
+          color:var(--accent2);padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:inherit;">📂 불러오기</button>
+        <button onclick="saveCurrentLeaders()" style="background:none;border:1px solid var(--border);border-radius:6px;
+          color:var(--muted);padding:4px 10px;font-size:.75rem;cursor:pointer;font-family:inherit;">💾 저장</button>
+      </div>
+    </div>
     <div id="leaders-list"></div>
+
+    <!-- 팀장 라이브러리 모달 -->
+    <div id="leader-lib-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);overflow-y:auto;">
+      <div style="max-width:520px;margin:48px auto 48px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:0 8px 40px rgba(0,0,0,.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <span style="font-size:1.05rem;font-weight:700;">📂 저장된 팀장 목록 불러오기</span>
+          <button onclick="document.getElementById('leader-lib-modal').style.display='none'"
+            style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <div id="leader-lib-list" style="display:flex;flex-direction:column;gap:10px;min-height:80px;">
+          <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">불러오는 중...</div>
+        </div>
+      </div>
+    </div>
     <p class="sec-title">
       경매 선수 목록
       <span id="players-count-badge" style="font-size:.75rem;color:var(--muted);font-weight:400;margin-left:8px;"></span>
@@ -655,6 +691,7 @@
     const points         = parseInt(document.getElementById('points').value);
     const timerSec       = parseInt(document.getElementById('timerSec').value);
     const minBid         = parseInt(document.getElementById('minBid').value);
+    const roomPw         = document.getElementById('roomPw').value.trim();
 
     const leaders = [...document.querySelectorAll('#leaders-list .l-name')]
       .map((el,i) => el.value.trim() || `팀장${i+1}`);
@@ -708,7 +745,9 @@
     sorted.forEach((p, i) => { playersObj[`player_${i}`] = p; });
 
     const roomData = {
-      meta: { title, teamCount, membersPerTeam, points, timerSec, minBid, createdAt: Date.now(),
+      meta: { title, teamCount, membersPerTeam, points, timerSec, minBid,
+              roomPw: roomPw || '',
+              createdAt: Date.now(),
               createdBy: window._currentUser?.id || 'unknown',
               createdByName: window._currentUser?.name || '알 수 없음' },
       teams,
@@ -891,6 +930,18 @@
     await window._remove(ref(window._db, `rooms/${code}`));
     showToast(`✅ 방 ${code} 삭제됨`);
     loadRooms();
+  }
+
+  function togglePwVisible() {
+    const input = document.getElementById('roomPw');
+    const btn   = document.getElementById('pw-eye-btn');
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁';
+    }
   }
 
   function showToast(msg) {
@@ -1084,6 +1135,122 @@
   // ── (레거시) IndexedDB — 더 이상 사용하지 않으나 호환용 유지
 
   // ── 섹션 전환
+  // ── 팀장 라이브러리 (저장/불러오기) ──────────────────────────────
+  async function saveCurrentLeaders() {
+    if (window._currentUser?.guest) { showToast('비회원은 저장 기능을 이용할 수 없습니다'); return; }
+    if (!window._db || !window._dbFns) { showToast('Firebase 연결 중입니다'); return; }
+
+    const leaders = [...document.querySelectorAll('#leaders-list .leader-item')].map((item, i) => ({
+      name:  item.querySelector('.l-name')?.value.trim() || '',
+      photo: leaderPhotos[i] || '',
+    }));
+    if (leaders.every(l => !l.name)) { showToast('팀장 이름을 입력해주세요'); return; }
+
+    const label = prompt('저장 이름을 입력해주세요 (예: 도현컵 시즌1 팀장)', `팀장 목록 ${new Date().toLocaleDateString('ko-KR')}`);
+    if (!label) return;
+
+    try {
+      const uid = window._currentUser?.id;
+      const { ref, set } = window._dbFns;
+      const id = `lleader_${Date.now()}`;
+      await set(ref(window._db, `leaderLib/${uid}/${id}`), { label, leaders, savedAt: Date.now() });
+      showToast(`✅ 팀장 ${leaders.filter(l=>l.name).length}명 저장 완료!`);
+    } catch(e) { showToast('저장 실패: ' + e.message); }
+  }
+
+  function openLeaderLibModal() {
+    if (window._currentUser?.guest) { showToast('비회원은 저장 기능을 이용할 수 없습니다'); return; }
+    document.getElementById('leader-lib-modal').style.display = '';
+    renderLeaderLibList();
+  }
+
+  async function renderLeaderLibList() {
+    const area = document.getElementById('leader-lib-list');
+    area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">불러오는 중...</div>';
+    if (!window._db || !window._dbFns) return;
+
+    const uid = window._currentUser?.id;
+    const { ref, get } = window._dbFns;
+    try {
+      const snap = await get(ref(window._db, `leaderLib/${uid}`));
+      if (!snap.exists()) {
+        area.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:24px 0;">저장된 팀장 목록이 없습니다<br><span style="font-size:.75rem;">💾 저장 버튼으로 현재 팀장을 저장해주세요</span></div>';
+        return;
+      }
+      const libs = snap.val();
+      const sorted = Object.entries(libs).sort((a,b) => b[1].savedAt - a[1].savedAt);
+      area.innerHTML = '';
+      sorted.forEach(([libId, lib]) => {
+        const dt = new Date(lib.savedAt);
+        const dateStr = `${dt.toLocaleDateString('ko-KR')} ${dt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`;
+        const item = document.createElement('div');
+        item.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;';
+        item.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div>
+              <div style="font-weight:700;font-size:.92rem;">${lib.label}</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${dateStr} · ${lib.leaders.filter(l=>l.name).length}명</div>
+            </div>
+            <button onclick="deleteLeaderLib('${libId}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 6px;" title="삭제">🗑</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+            ${lib.leaders.filter(l=>l.name).map(l => `
+              <div style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 10px;font-size:.8rem;">
+                ${l.photo ? `<img src="${l.photo}" style="width:22px;height:22px;border-radius:4px;object-fit:cover;" />` : '<span>👤</span>'}
+                <span>${l.name}</span>
+              </div>`).join('')}
+          </div>
+          <button onclick="loadLeaderLib('${libId}')"
+            style="width:100%;padding:9px;background:linear-gradient(135deg,var(--accent2),#1d4ed8);border:none;
+            border-radius:8px;color:#fff;font-weight:700;font-family:inherit;font-size:.85rem;cursor:pointer;">
+            이 팀장 목록 불러오기
+          </button>`;
+        area.appendChild(item);
+      });
+      window._leaderLibCache = libs;
+    } catch(e) {
+      area.innerHTML = `<div style="text-align:center;color:var(--danger);font-size:.85rem;padding:24px 0;">오류: ${e.message}</div>`;
+    }
+  }
+
+  async function loadLeaderLib(libId) {
+    if (!confirm('현재 팀장 정보가 덮어씌워집니다. 계속할까요?')) return;
+    const libs = window._leaderLibCache || {};
+    const lib  = libs[libId];
+    if (!lib) return;
+
+    // 팀 수를 불러온 팀장 수에 맞게 조정
+    const count = lib.leaders.length;
+    document.getElementById('teamCount').value = count;
+    renderLeaders();
+
+    // 이름과 사진 적용
+    setTimeout(() => {
+      lib.leaders.forEach((l, i) => {
+        const nameEl = document.querySelectorAll('#leaders-list .l-name')[i];
+        if (nameEl && l.name) nameEl.value = l.name;
+        if (l.photo) {
+          leaderPhotos[i] = l.photo;
+          const prevEl = document.getElementById(`lp-prev-${i}`);
+          if (prevEl) prevEl.innerHTML = `<img src="${l.photo}" />`;
+        }
+      });
+      document.getElementById('leader-lib-modal').style.display = 'none';
+      showToast(`✅ 팀장 ${count}명 불러오기 완료!`);
+      updateHint();
+    }, 100);
+  }
+
+  async function deleteLeaderLib(libId) {
+    if (!confirm('이 팀장 목록을 삭제할까요?')) return;
+    const uid = window._currentUser?.id;
+    try {
+      await window._remove(window._dbFns.ref(window._db, `leaderLib/${uid}/${libId}`));
+      showToast('삭제 완료');
+      renderLeaderLibList();
+    } catch(e) { showToast('삭제 실패: ' + e.message); }
+  }
+
   // ── 선수 라이브러리 (저장/불러오기) ──────────────────────────────
   function _playerLibRef() {
     const uid = window._currentUser?.id;

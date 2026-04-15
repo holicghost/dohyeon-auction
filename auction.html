@@ -430,16 +430,86 @@
 
   window.addEventListener('load', () => {
     if (window._db && window._dbFns) {
-      startListening();
+      checkRoomPwThenStart();
     } else {
       const timer = setInterval(() => {
         if (window._db && window._dbFns) {
           clearInterval(timer);
-          startListening();
+          checkRoomPwThenStart();
         }
       }, 100);
     }
   });
+
+  // ── 방 비밀번호 검증 후 입장
+  async function checkRoomPwThenStart() {
+    // 팀장 토큰이 있거나 관전자 역할이면 비밀번호 체크 (관전자도 비번 필요)
+    // host는 auction.html에 접근하지 않으므로 모두 검증
+    const { ref, get } = window._dbFns;
+    try {
+      const snap = await get(ref(window._db, `rooms/${ROOM}/meta/roomPw`));
+      const pw   = snap.exists() ? snap.val() : '';
+      if (!pw) {
+        // 비밀번호 없음 → 바로 입장
+        startListening();
+        return;
+      }
+      // 세션에 이미 인증된 방이면 스킵
+      const sessionKey = `roomAuth_${ROOM}`;
+      if (sessionStorage.getItem(sessionKey) === pw) {
+        startListening();
+        return;
+      }
+      // 비밀번호 모달 표시
+      showPwModal(pw);
+    } catch(e) {
+      startListening(); // 오류 시 그냥 입장
+    }
+  }
+
+  function showPwModal(correctPw) {
+    const overlay = document.createElement('div');
+    overlay.id = 'pw-modal';
+    overlay.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(10,14,26,.95);
+      backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;`;
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;
+          padding:36px 32px;width:100%;max-width:380px;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:14px;">🔒</div>
+        <div style="font-family:'Black Han Sans',sans-serif;font-size:1.5rem;color:var(--accent);margin-bottom:6px;">비밀번호 입력</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:24px;">이 경매는 비밀번호로 보호되어 있습니다</div>
+        <input type="password" id="room-pw-input" placeholder="비밀번호를 입력하세요"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+          color:var(--text);padding:12px 16px;font-size:1rem;font-family:inherit;outline:none;
+          text-align:center;letter-spacing:3px;margin-bottom:8px;"
+          onkeydown="if(event.key==='Enter')document.getElementById('room-pw-confirm').click()" />
+        <div id="room-pw-err" style="color:var(--danger);font-size:.78rem;min-height:18px;margin-bottom:10px;"></div>
+        <button id="room-pw-confirm"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#d97706);
+          border:none;border-radius:10px;color:#0a0e1a;font-weight:700;font-family:inherit;
+          font-size:1rem;cursor:pointer;margin-bottom:10px;"
+          onclick="(function(){
+            const val = document.getElementById('room-pw-input').value;
+            if(val === '${correctPw}') {
+              sessionStorage.setItem('roomAuth_${ROOM}', '${correctPw}');
+              document.getElementById('pw-modal').remove();
+              startListening();
+            } else {
+              const err = document.getElementById('room-pw-err');
+              err.textContent = '비밀번호가 틀렸습니다';
+              document.getElementById('room-pw-input').value = '';
+              document.getElementById('room-pw-input').focus();
+              setTimeout(()=>{err.textContent='';},2000);
+            }
+          })()">입장하기</button>
+        <button onclick="location.href='index.html'"
+          style="background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;font-family:inherit;">
+          ← 메인으로 돌아가기
+        </button>
+      </div>`;
+    document.body.appendChild(overlay);
+    setTimeout(() => document.getElementById('room-pw-input')?.focus(), 100);
+  }
 
   function render() {
     if (!roomData) return;
@@ -730,60 +800,56 @@
     document.getElementById('final-teams').innerHTML = Object.entries(teams).map(([k,t], idx) => {
       const color   = TEAM_COLORS[idx % TEAM_COLORS.length];
       const members = t.members || [];
-      const leaderPhoto = t.photo
-        ? `<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;" />`
-        : `<span style="font-size:1.4rem;">👤</span>`;
 
-      // 팀원 카드 리스트
+      // ── 팀장 카드
+      const leaderPhotoEl = t.photo
+        ? `<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;" />`
+        : `<span style="font-size:1.8rem;">👤</span>`;
+      const leaderCard = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <div style="width:80px;height:80px;border-radius:10px;overflow:hidden;
+            background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.4);
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;">${leaderPhotoEl}</div>
+          <div style="font-size:.88rem;font-weight:700;color:#fff;text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div>
+          <div style="font-size:.62rem;background:rgba(0,0,0,.3);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:1px 7px;">팀장</div>
+        </div>`;
+
+      // ── 팀원 카드들
       const memberCards = members.map(pid => {
         const p = players[pid];
         if (!p) return '';
         const gradeColor = p.grade === '고' ? '#ef4444' : '#3b82f6';
-        const gradeBg    = p.grade === '고' ? 'rgba(239,68,68,.15)' : 'rgba(59,130,246,.15)';
-        const gradeTxt   = p.grade === '고' ? '🔴 고티어' : '🔵 저티어';
-        const price      = logMap[pid] != null ? logMap[pid] : null;
+        const price      = logMap[pid] != null ? `${logMap[pid]}pt` : '';
         const photoEl    = p.photo
           ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;" />`
-          : `<span style="font-size:1rem;">👤</span>`;
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;
-            background:rgba(0,0,0,.2);border-radius:8px;border:1px solid rgba(255,255,255,.08);">
-          <div style="width:44px;height:44px;border-radius:7px;overflow:hidden;flex-shrink:0;
-            background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.2);
-            display:flex;align-items:center;justify-content:center;">${photoEl}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:1rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
-            <div style="font-size:.7rem;color:rgba(255,255,255,.6);margin-top:2px;">${p.role || ''}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
-            <span style="font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:5px;
-              background:${gradeBg};color:${gradeColor};border:1px solid ${gradeColor};">${gradeTxt}</span>
-            ${price != null ? `<span style="font-size:.78rem;font-weight:700;color:#f59e0b;">${price}pt</span>` : ''}
-          </div>
-        </div>`;
+          : `<span style="font-size:1.8rem;">👤</span>`;
+        return `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="width:80px;height:80px;border-radius:10px;overflow:hidden;
+              background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.2);
+              display:flex;align-items:center;justify-content:center;flex-shrink:0;">${photoEl}</div>
+            <div style="font-size:.88rem;font-weight:700;color:#fff;text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+              ${price ? `<span style="font-size:.72rem;font-weight:700;color:#f59e0b;">${price}</span>` : ''}
+              <span style="font-size:.62rem;font-weight:700;color:${gradeColor};">${p.grade==='고'?'🔴':'🔵'} ${p.role||''}</span>
+            </div>
+          </div>`;
       }).join('');
 
-      return `<div style="background:${color.light};border-radius:14px;overflow:hidden;
-          border:2px solid rgba(255,255,255,.08);margin-bottom:14px;">
-        <div style="background:${color.bg};display:flex;align-items:center;justify-content:space-between;padding:10px 16px;">
-          <div style="font-size:.95rem;font-weight:800;color:#fff;letter-spacing:.5px;">TEAM ${t.name}</div>
-          <div style="font-size:.85rem;font-weight:700;color:rgba(255,255,255,.9);">${t.points}pt 잔여</div>
-        </div>
-        <div style="padding:12px 14px;">
-          <!-- 팀장 -->
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;
-            background:rgba(255,255,255,.07);border-radius:8px;border:1px solid rgba(255,255,255,.15);">
-            <div style="width:44px;height:44px;border-radius:7px;overflow:hidden;flex-shrink:0;
-              background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.3);
-              display:flex;align-items:center;justify-content:center;">${leaderPhoto}</div>
-            <div style="flex:1;">
-              <div style="font-size:1rem;font-weight:700;color:#fff;">${t.name}</div>
-              <div style="font-size:.68rem;color:rgba(255,255,255,.6);">팀장</div>
+      return `
+        <div style="background:${color.light};border-radius:14px;overflow:hidden;
+            border:2px solid rgba(255,255,255,.08);margin-bottom:16px;">
+          <div style="background:${color.bg};display:flex;align-items:center;justify-content:space-between;padding:10px 18px;">
+            <div style="font-size:1rem;font-weight:800;color:#fff;letter-spacing:.5px;">TEAM ${t.name}</div>
+            <div style="font-size:.88rem;font-weight:700;color:rgba(255,255,255,.9);">${t.points}pt 잔여</div>
+          </div>
+          <div style="padding:16px 18px;">
+            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;">
+              ${leaderCard}
+              ${memberCards}
             </div>
           </div>
-          <!-- 팀원 -->
-          <div style="display:flex;flex-direction:column;gap:6px;">${memberCards}</div>
-        </div>
-      </div>`;
+        </div>`;
     }).join('');
   }
 

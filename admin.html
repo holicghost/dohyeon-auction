@@ -291,10 +291,15 @@
       <div class="card-title" style="color:var(--danger);">⚠️ 위험 구역</div>
       <div class="warn-box">아래 작업들은 되돌리기 어렵습니다. 신중하게 사용하세요.</div>
       <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:6px;color:var(--success);">🔁 경매 재시작</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">전체 초기화 후 host 화면으로 이동해 경매를 새로 시작합니다. 모든 낙찰 기록과 포인트가 초기화됩니다.</div>
+          <button class="btn btn-success" onclick="restartAuction()">🔁 경매 재시작</button>
+        </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
           <div style="font-weight:700;margin-bottom:6px;">경매 전체 초기화</div>
-          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">모든 낙찰 기록 삭제, 팀 포인트 초기값 복구, 경매 대기 상태로 초기화</div>
-          <button class="btn btn-danger" onclick="resetAuction()">🔄 경매 전체 초기화</button>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">모든 낙찰 기록 삭제, 팀 포인트 초기값 복구, 경매 대기 상태로 초기화 (이동 없음)</div>
+          <button class="btn btn-danger" onclick="resetAuction()">🔄 경매 전체 초기화만</button>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
           <div style="font-weight:700;margin-bottom:6px;">강제 종료</div>
@@ -302,12 +307,37 @@
           <button class="btn btn-warn" onclick="forceFinish()">⏹ 강제 종료</button>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-weight:700;margin-bottom:8px;">비밀번호 변경</div>
+          <div style="font-weight:700;margin-bottom:8px;">관리자 패널 비밀번호 변경</div>
           <div style="display:flex;gap:8px;">
             <input type="password" id="new-pw" placeholder="새 비밀번호"
               style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
               color:var(--text);padding:8px 12px;font-size:.88rem;font-family:inherit;outline:none;" />
             <button class="btn btn-ghost" onclick="changePw()">변경</button>
+          </div>
+        </div>
+        <!-- 방 비밀번호 -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:4px;">방 입장 비밀번호</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;">설정 시 링크만으로 접속 불가. 비워두면 비밀번호 해제.</div>
+          <div id="room-pw-current" style="font-size:.78rem;color:var(--accent);margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="room-pw-input" placeholder="새 방 비밀번호 (빈칸=해제)"
+              style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+              color:var(--text);padding:8px 12px;font-size:.88rem;font-family:inherit;outline:none;" />
+            <button class="btn btn-ghost" onclick="changeRoomPw()">설정</button>
+          </div>
+        </div>
+        <!-- 공동 관리자 -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:4px;">공동 관리자 추가</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;">지정된 계정은 이 방의 host.html에 접근할 수 있습니다.</div>
+          <div id="co-admin-list" style="margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="co-admin-input" placeholder="계정 ID 입력"
+              style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+              color:var(--text);padding:8px 12px;font-size:.88rem;font-family:inherit;outline:none;"
+              onkeydown="if(event.key==='Enter')addCoAdmin()" />
+            <button class="btn btn-ghost" onclick="addCoAdmin()">추가</button>
           </div>
         </div>
       </div>
@@ -520,6 +550,78 @@
     showToast('✅ 비밀번호 변경 완료');
   }
 
+  // ── 방 입장 비밀번호
+  async function loadRoomPw() {
+    if (!ROOM) return;
+    const { ref, get } = window._dbFns;
+    const snap = await get(ref(window._db, `rooms/${ROOM}/meta/roomPw`));
+    const pw   = snap.exists() ? snap.val() : '';
+    const el   = document.getElementById('room-pw-current');
+    if (el) el.textContent = pw ? `현재: "${pw}" 설정됨` : '현재: 비밀번호 없음 (누구나 입장 가능)';
+    const input = document.getElementById('room-pw-input');
+    if (input) input.value = pw || '';
+  }
+
+  async function changeRoomPw() {
+    const { ref, update } = window._dbFns;
+    const pw = document.getElementById('room-pw-input').value.trim();
+    await update(ref(window._db, `rooms/${ROOM}/meta`), { roomPw: pw });
+    showToast(pw ? `✅ 방 비밀번호 설정: "${pw}"` : '✅ 방 비밀번호 해제됨');
+    loadRoomPw();
+  }
+
+  // ── 공동 관리자
+  async function loadCoAdmins() {
+    if (!ROOM) return;
+    const { ref, get } = window._dbFns;
+    const snap = await get(ref(window._db, `rooms/${ROOM}/meta/coAdmins`));
+    const list = snap.exists() ? (snap.val() || []) : [];
+    renderCoAdmins(list);
+  }
+
+  function renderCoAdmins(list) {
+    const el = document.getElementById('co-admin-list');
+    if (!el) return;
+    if (!list.length) {
+      el.innerHTML = `<div style="font-size:.78rem;color:var(--muted);">등록된 공동 관리자 없음</div>`;
+      return;
+    }
+    el.innerHTML = list.map((id, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 12px;">
+        <span style="font-size:.85rem;">👤 ${id}</span>
+        <button onclick="removeCoAdmin(${i})"
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;padding:2px 6px;">✕</button>
+      </div>`).join('');
+    window._coAdminList = list;
+  }
+
+  async function addCoAdmin() {
+    const { ref, get, update } = window._dbFns;
+    const id = document.getElementById('co-admin-input').value.trim();
+    if (!id) { showToast('계정 ID를 입력해주세요'); return; }
+    // 계정 존재 여부 확인
+    const userSnap = await get(ref(window._db, `users/${id}`));
+    if (!userSnap.exists()) { showToast(`"${id}" 계정을 찾을 수 없습니다`); return; }
+    const snap = await get(ref(window._db, `rooms/${ROOM}/meta/coAdmins`));
+    const list = snap.exists() ? (snap.val() || []) : [];
+    if (list.includes(id)) { showToast('이미 등록된 계정입니다'); return; }
+    list.push(id);
+    await update(ref(window._db, `rooms/${ROOM}/meta`), { coAdmins: list });
+    document.getElementById('co-admin-input').value = '';
+    showToast(`✅ "${id}" 공동 관리자 추가`);
+    loadCoAdmins();
+  }
+
+  async function removeCoAdmin(idx) {
+    const { ref, update } = window._dbFns;
+    const list = [...(window._coAdminList || [])];
+    list.splice(idx, 1);
+    await update(ref(window._db, `rooms/${ROOM}/meta`), { coAdmins: list });
+    showToast('공동 관리자 제거됨');
+    loadCoAdmins();
+  }
+
   // ── 폼 초기화 (티어 옵션 + 영웅 선택)
   function initForms() {
     const tierHtml = TIERS.map(t => `<option>${t}</option>`).join('');
@@ -555,6 +657,7 @@
     if (name === 'order') renderOrder();
     if (name === 'cancel') renderSettled();
     if (name === 'users') loadUsers();
+    if (name === 'danger') { loadRoomPw(); loadCoAdmins(); }
   }
 
   // ── 이용자 + 방 목록
@@ -1007,6 +1110,39 @@
   }
 
   // ══ TAB 5: 위험 ══
+  async function restartAuction(){
+    if(!confirm('경매를 초기화하고 재시작합니다.\n\n모든 낙찰 기록과 포인트가 초기화됩니다.\n계속하시겠습니까?'))return;
+    const {ref,update,get}=window._dbFns;
+    const snap=await get(ref(window._db,`rooms/${ROOM}`));
+    const data=snap.val();
+    const initPts=data.meta.points||1000;
+    const upd={};
+    Object.entries(data.teams||{}).forEach(([tk])=>{
+      upd[`rooms/${ROOM}/teams/${tk}/points`]=initPts;
+      upd[`rooms/${ROOM}/teams/${tk}/members`]=[];
+    });
+    Object.entries(data.players||{}).forEach(([pid])=>{
+      upd[`rooms/${ROOM}/players/${pid}/assignedTo`]=null;
+    });
+    const RO={'딜러':0,'탱커':1,'힐러':2};const GO={'고':0,'저':1};
+    const sorted=Object.keys(data.players||{}).sort((a,b)=>{
+      const pa=data.players[a],pb=data.players[b];
+      const rA=RO[pa?.role]??99,rB=RO[pb?.role]??99;
+      if(rA!==rB)return rA-rB;
+      return (GO[pa?.grade]??1)-(GO[pb?.grade]??1);
+    });
+    upd[`rooms/${ROOM}/auction/status`]='waiting';
+    upd[`rooms/${ROOM}/auction/order`]=sorted;
+    upd[`rooms/${ROOM}/auction/currentPlayer`]=null;
+    upd[`rooms/${ROOM}/auction/currentBid`]=0;
+    upd[`rooms/${ROOM}/auction/currentLeader`]=null;
+    upd[`rooms/${ROOM}/auction/timerEndsAt`]=null;
+    upd[`rooms/${ROOM}/auction/log`]=[];
+    upd[`rooms/${ROOM}/auction/paused`]=false;
+    await update(ref(window._db),upd);
+    showToast('✅ 초기화 완료! host 화면으로 이동합니다...');
+    setTimeout(()=>{ window.open(`host.html?room=${ROOM}`, '_blank'); }, 1000);
+  }
   async function resetAuction(){
     if(!confirm('경매를 완전히 초기화합니다. 계속할까요?'))return;
     const {ref,update,get}=window._dbFns;

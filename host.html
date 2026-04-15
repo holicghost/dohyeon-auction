@@ -525,6 +525,7 @@
       roomData = snap.val();
       render();
     });
+    initHostChat();
   }
 
   // Firebase module이 load보다 늦을 수 있으므로 polling으로 대기
@@ -1144,6 +1145,87 @@
   }
 
   function runLottery() { startWithLottery(); }
+  // ── 채팅 (진행자) ────────────────────────────────────────────────
+  let chatOpen = false;
+  let unreadCount = 0;
+  let lastChatTs = 0;
+
+  function initHostChat() {
+    const { ref, onValue } = window._dbFns;
+    onValue(ref(window._db, `rooms/${ROOM}/chat`), snap => {
+      renderHostChatMessages(snap.val() || {});
+    });
+  }
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    document.getElementById('chat-box').classList.toggle('open', chatOpen);
+    if (chatOpen) {
+      unreadCount = 0;
+      updateChatBadge();
+      scrollChatBottom();
+      document.getElementById('chat-input').focus();
+    }
+  }
+
+  function updateChatBadge() {
+    const badge = document.getElementById('chat-badge');
+    if (unreadCount > 0 && !chatOpen) {
+      badge.style.display = 'flex';
+      badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function renderHostChatMessages(msgs) {
+    const el = document.getElementById('chat-messages');
+    if (!el) return;
+    const entries = Object.values(msgs).sort((a,b) => a.ts - b.ts);
+    const newMsgs = entries.filter(m => m.ts > lastChatTs);
+    if (newMsgs.length > 0 && !chatOpen) {
+      unreadCount += newMsgs.length;
+      updateChatBadge();
+    }
+    if (entries.length > 0) lastChatTs = entries[entries.length-1].ts;
+
+    el.innerHTML = entries.map(m => {
+      const isMe     = m.senderId === 'host';
+      const isSystem = m.type === 'system';
+      const dt       = new Date(m.ts);
+      const timeStr  = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      if (isSystem) {
+        return `<div class="chat-msg system"><div class="chat-bubble" style="font-size:.72rem;">${m.text}</div></div>`;
+      }
+      const name = isMe ? '🎙 진행자' : m.senderName;
+      return `<div class="chat-msg ${isMe?'mine':'others'}">
+        ${!isMe ? `<div class="chat-name">${name}</div>` : ''}
+        <div style="display:flex;align-items:flex-end;gap:4px;${isMe?'flex-direction:row-reverse;':''}">
+          <div class="chat-bubble">${m.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          <div class="chat-time">${timeStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+    if (chatOpen) scrollChatBottom();
+  }
+
+  function scrollChatBottom() {
+    const el = document.getElementById('chat-messages');
+    if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    const { ref, push } = window._dbFns;
+    await push(ref(window._db, `rooms/${ROOM}/chat`), {
+      senderId: 'host', senderName: '🎙 진행자',
+      text, ts: Date.now(), type: 'message'
+    });
+    input.value = '';
+  }
+
   function copyObs() { navigator.clipboard.writeText(`${BASE}auction.html?room=${ROOM}&role=observer`).then(()=>showToast('복사됨!')); }
   function copyObsEl() { navigator.clipboard.writeText(document.getElementById('obs-link').textContent).then(()=>showToast('복사됨!')); }
   function goAdmin() { window.open(`admin.html?room=${ROOM}`, '_blank'); }
