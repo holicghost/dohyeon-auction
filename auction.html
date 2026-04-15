@@ -8,7 +8,7 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, get, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     const firebaseConfig = {
       apiKey: "AIzaSyA0czyhDNksFIN8097sE0dJcErcYBZGC5s",
       authDomain: "dohyeon-4e4e0.firebaseapp.com",
@@ -20,7 +20,7 @@
     };
     const app = initializeApp(firebaseConfig);
     window._db = getDatabase(app);
-    window._dbFns = { ref, onValue, update, get, push, serverTimestamp };
+    window._dbFns = { ref, onValue, update, get };
   </script>
   <style>
     :root{
@@ -135,31 +135,6 @@
     .order-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
     .order-section-title{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;
       display:flex;align-items:center;gap:6px;}
-    /* ── 채팅 ── */
-    .chat-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;}
-    .chat-messages{height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:2px;margin-bottom:8px;}
-    .chat-messages::-webkit-scrollbar{width:3px;}
-    .chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-    .chat-msg{padding:6px 10px;border-radius:8px;font-size:.78rem;line-height:1.45;word-break:break-word;max-width:92%;}
-    .chat-msg.mine{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25);align-self:flex-end;border-bottom-right-radius:2px;}
-    .chat-msg.other{background:var(--surface2);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:2px;}
-    .chat-msg.system{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);align-self:center;
-      text-align:center;color:var(--accent2);font-size:.68rem;border-radius:20px;padding:2px 12px;max-width:100%;}
-    .chat-sender{font-size:.62rem;font-weight:700;margin-bottom:2px;}
-    .chat-sender.s-mine{color:var(--accent);}
-    .chat-sender.s-other{color:#94a3b8;}
-    .chat-sender.s-obs{color:#818cf8;}
-    .chat-time{font-size:.55rem;color:var(--muted);margin-top:1px;}
-    .chat-input-row{display:flex;gap:6px;}
-    .chat-input-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-      color:var(--text);padding:7px 10px;font-size:.8rem;font-family:inherit;outline:none;transition:border .2s;min-width:0;}
-    .chat-input-row input:focus{border-color:var(--accent);}
-    .chat-input-row input:disabled{opacity:.4;cursor:not-allowed;}
-    .chat-send-btn{background:linear-gradient(135deg,var(--accent),#d97706);border:none;
-      border-radius:8px;color:#0a0e1a;font-weight:700;font-family:inherit;font-size:.78rem;
-      padding:7px 12px;cursor:pointer;flex-shrink:0;transition:opacity .2s;white-space:nowrap;}
-    .chat-send-btn:hover{opacity:.85;}
-    .chat-send-btn:disabled{opacity:.35;cursor:not-allowed;}
     .order-tier-badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;}
     .tb-고{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444;}
     .tb-저{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6;}
@@ -290,46 +265,17 @@
       </div>
     </div>
 
-    <!-- 오른쪽: 카테고리별 경매 순서 + 채팅 -->
+    <!-- 오른쪽: 카테고리별 경매 순서 -->
     <div class="right-panel">
       <div class="order-section">
         <div class="order-section-title">경매 순서</div>
         <div id="order-by-category"></div>
-      </div>
-
-      <!-- 채팅 -->
-      <div class="chat-section">
-        <div class="order-section-title" style="margin-bottom:8px;">
-          💬 채팅
-          <span id="chat-online-badge" style="font-size:.62rem;color:var(--success);margin-left:auto;"></span>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-          <div style="color:var(--muted);font-size:.75rem;text-align:center;padding:20px 0;">채팅을 불러오는 중...</div>
-        </div>
-        <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="100"
-            onkeydown="if(event.key==='Enter')sendChat()"
-            disabled />
-          <button class="chat-send-btn" id="chat-send-btn" onclick="sendChat()" disabled>전송</button>
-        </div>
-        <div id="chat-status" style="font-size:.65rem;color:var(--muted);margin-top:5px;text-align:center;min-height:14px;"></div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- 완료 -->
-<div id="category-break-screen" class="card" style="display:none;">
-  <div class="center-screen" style="text-align:center;padding:36px 0;">
-    <div style="font-size:3rem;margin-bottom:14px;">✅</div>
-    <h3 id="auction-cb-title" style="margin-bottom:10px;font-size:1.4rem;">고티어 경매가 끝났습니다</h3>
-    <p id="auction-cb-subtitle" style="color:var(--muted);margin-bottom:8px;font-size:.9rem;">고티어 선수 경매가 모두 끝났습니다</p>
-    <p id="auction-cb-next" style="color:var(--accent2);font-size:.85rem;">잠시 후 다음 경매가 시작됩니다...</p>
-  </div>
-</div>
-
-</div>
-
 <div id="finished-screen" class="card" style="display:none;">
   <div class="center-screen">
     <div style="font-size:2.5rem;margin-bottom:12px;">🎉</div>
@@ -395,30 +341,8 @@
   function heroImgUrl(name) {
     const k = OW_HEROES[name];
     if (!k) return '';
-    // CDN 슬러그 재정의 (점·특수문자 제거 등)
-    const SLUG_FIX = {
-      'd.va':         'dva',
-      'wrecking-ball':'wrecking-ball',
-    };
-    const slug = SLUG_FIX[k] || k;
-    if (OW2_NEW.has(k)) {
-      return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${slug}.png`;
-    }
-    // OW1 영웅이지만 점이 있는 슬러그(d.va)는 URL에 그대로 써도 됨
+    if (OW2_NEW.has(k)) return `https://d15f34w2p8l1cc.cloudfront.net/overwatch/${k}.png`;
     return `https://blzgdapipro-a.akamaihd.net/hero/${k}/icon-portrait.png`;
-  }
-  // 이미지 로드 실패 시 대체 CDN 시도
-  function heroImgHtml(name, cls='') {
-    const primary = heroImgUrl(name);
-    if (!primary) return '<span style="font-size:1.1rem">🎮</span>';
-    // 미스포춘, 주노 등 누락 가능 영웅은 두 CDN 모두 시도
-    const k = OW_HEROES[name] || '';
-    const fallback = OW2_NEW.has(k)
-      ? \`https://blzgdapipro-a.akamaihd.net/hero/\${k}/icon-portrait.png\`
-      : \`https://d15f34w2p8l1cc.cloudfront.net/overwatch/\${(k||'').replace('.','')}.png\`;
-    return \`<img src="\${primary}" class="\${cls}"
-      style="width:100%;height:100%;object-fit:cover;"
-      onerror="this.src='\${fallback}';this.onerror=function(){this.parentElement.innerHTML='<span style=font-size:1.1rem>🎮</span>'}" />\`;
   }
 
   function renderHeroes(heroes) {
@@ -489,15 +413,10 @@
     const st = auction.status;
     if (IS_LEADER && teams[TEAM_KEY])
       document.getElementById('role-badge').innerHTML = `<span class="badge-team">🏅 ${teams[TEAM_KEY].name} 팀장</span>`;
-    document.getElementById('waiting-screen').style.display          = st==='waiting'  ? '':'none';
-    document.getElementById('auction-screen').style.display          = (st==='preview'||st==='bidding') ? '':'none';
-    document.getElementById('category-break-screen').style.display   = st==='category-break' ? '':'none';
-    document.getElementById('finished-screen').style.display         = st==='finished' ? '':'none';
-    if (st==='preview'||st==='bidding') { renderAuction(); renderTeams(); renderOrderPanel(); }
-    if (st==='category-break') { stopTimer(); renderAuctionCategoryBreak(); }
-    if (st==='finished') { stopTimer(); renderFinal(); }
-    // 채팅 초기화 (최초 1회)
-    initChat();
+    document.getElementById('waiting-screen').style.display  = st==='waiting'  ? '':'none';
+    document.getElementById('auction-screen').style.display  = (st==='preview'||st==='bidding') ? '':'none';
+    document.getElementById('finished-screen').style.display = st==='finished' ? '':'none';
+    if (st==='preview'||st==='bidding') { renderAuction(); renderTeams(); renderOrderPanel(); }    if (st==='finished') { stopTimer(); renderFinal(); }
   }
 
   function renderAuction() {
@@ -678,12 +597,9 @@
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   async function placeBid(amount) {
-    if (!roomData || !roomData.auction || !roomData.teams) return;
-    if (!IS_LEADER) return;
     const { ref, update } = window._dbFns;
     const { auction, teams, meta } = roomData;
     if (auction.status !== 'bidding') { showToast('아직 입찰할 수 없습니다'); return; }
-    if (!auction.currentPlayer) { showToast('경매 중인 선수가 없습니다'); return; }
     let amt = amount ?? parseInt(document.getElementById('custom-amt').value);
     if (isNaN(amt)) { showToast('금액을 입력해주세요'); return; }
     const curBid = auction.currentBid || 0;
@@ -737,16 +653,6 @@
     }).join('');
   }
 
-  function renderAuctionCategoryBreak() {
-    const { auction } = roomData;
-    const from = auction.breakFromGrade || '고';
-    const to   = auction.breakToGrade   || '저';
-    const gradeLabel = { '고': '고티어', '중': '중티어', '저': '저티어' };
-    document.getElementById('auction-cb-title').textContent    = `${gradeLabel[from]} 경매가 끝났습니다`;
-    document.getElementById('auction-cb-subtitle').textContent = `${gradeLabel[from]} 선수 경매가 모두 끝났습니다`;
-    document.getElementById('auction-cb-next').textContent     = `다음: ${gradeLabel[to]} 경매 — 주최자가 시작하면 이어집니다`;
-  }
-
   function renderFinal() {
     const { teams, players, meta } = roomData;
     const maxSlots = (meta.membersPerTeam || 6) - 1;
@@ -778,109 +684,6 @@
         </div>
       </div>`;
     }).join('');
-  }
-
-  // ── 채팅 ────────────────────────────────────────────────────────────
-  let _chatUnsub = null;
-  let _myDisplayName = '';
-  let _chatInitDone  = false;
-
-  function initChat() {
-    if (_chatInitDone) return;
-    _chatInitDone = true;
-
-    // 내 표시 이름 결정
-    if (IS_LEADER && roomData?.teams?.[TEAM_KEY]) {
-      _myDisplayName = `🏅 ${roomData.teams[TEAM_KEY].name}`;
-    } else if (IS_OBSERVER) {
-      _myDisplayName = '👁 관전자';
-    } else {
-      _myDisplayName = '참가자';
-    }
-
-    // 채팅 가능 여부: 팀장 또는 관전자 모두 가능 (읽기는 모두, 쓰기는 팀장만)
-    const canSend = IS_LEADER;
-    const chatInput   = document.getElementById('chat-input');
-    const chatSendBtn = document.getElementById('chat-send-btn');
-    const chatStatus  = document.getElementById('chat-status');
-
-    if (canSend) {
-      chatInput.disabled   = false;
-      chatSendBtn.disabled = false;
-      chatInput.placeholder = '메시지 입력... (Enter)';
-    } else {
-      chatStatus.textContent = '👁 관전자는 채팅을 볼 수만 있습니다';
-    }
-
-    // 입장 알림
-    if (IS_LEADER && roomData?.teams?.[TEAM_KEY]) {
-      _pushSystemMsg(`${roomData.teams[TEAM_KEY].name} 팀장이 입장했습니다`);
-    }
-
-    // 실시간 구독
-    const { ref, onValue } = window._dbFns;
-    _chatUnsub = onValue(ref(window._db, `rooms/${ROOM}/chat`), snap => {
-      renderChatMessages(snap.exists() ? snap.val() : {});
-    });
-  }
-
-  function renderChatMessages(chatData) {
-    const el = document.getElementById('chat-messages');
-    const entries = Object.entries(chatData).sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
-    // 최근 80개만
-    const recent = entries.slice(-80);
-    if (!recent.length) {
-      el.innerHTML = `<div style="color:var(--muted);font-size:.75rem;text-align:center;padding:20px 0;">아직 채팅이 없습니다</div>`;
-      return;
-    }
-    const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    el.innerHTML = recent.map(([, msg]) => {
-      if (msg.type === 'system') {
-        return `<div class="chat-msg system">${escHtml(msg.text)}</div>`;
-      }
-      const isMine    = msg.senderKey === TEAM_KEY && IS_LEADER;
-      const cls       = isMine ? 'mine' : 'other';
-      const senderCls = isMine ? 's-mine' : (msg.senderKey === 'observer' ? 's-obs' : 's-other');
-      const timeStr   = msg.ts ? new Date(msg.ts).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';
-      return `<div class="chat-msg ${cls}">
-        <div class="chat-sender ${senderCls}">${escHtml(msg.sender)}</div>
-        ${escHtml(msg.text)}
-        <div class="chat-time">${timeStr}</div>
-      </div>`;
-    }).join('');
-    // 새 메시지면 자동 스크롤
-    if (wasAtBottom) el.scrollTop = el.scrollHeight;
-  }
-
-  async function sendChat() {
-    if (!IS_LEADER) return;
-    const input = document.getElementById('chat-input');
-    const text  = input.value.trim();
-    if (!text) return;
-    input.value = '';
-
-    const senderName = roomData?.teams?.[TEAM_KEY]?.name || '팀장';
-    const { ref, push } = window._dbFns;
-    await push(ref(window._db, `rooms/${ROOM}/chat`), {
-      sender:    `🏅 ${senderName}`,
-      senderKey: TEAM_KEY,
-      text,
-      ts: Date.now(),
-      type: 'msg'
-    });
-  }
-
-  async function _pushSystemMsg(text) {
-    const { ref, push } = window._dbFns;
-    await push(ref(window._db, `rooms/${ROOM}/chat`), {
-      sender: 'system', senderKey: 'system', text, ts: Date.now(), type: 'system'
-    });
-  }
-
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
   }
 
   function showToast(msg) {
